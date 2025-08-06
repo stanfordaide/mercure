@@ -49,11 +49,14 @@ echo "Using image tag $TAG"
 echo ""
 
 FORCE_BUILD="n"
-CACHE="--no-cache"
-while getopts ":yc" opt; do
+CACHE=""
+while getopts ":ync" opt; do
   case ${opt} in
     y )
       FORCE_BUILD="y"
+      ;;
+    n )
+      CACHE="--no-cache"
       ;;
     c )
       CACHE=""

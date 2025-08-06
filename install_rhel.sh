@@ -189,8 +189,12 @@ setup_docker_dev () {
 }
 
 build_docker () {
-  echo "## Building mercure docker containers..."  
-  sudo $MERCURE_SRC/build-docker.sh -y
+  echo "## Building mercure docker containers..."
+  if [ "$NO_CACHE" = true ]; then
+    sudo $MERCURE_SRC/build-docker.sh -y -n
+  else
+    sudo $MERCURE_SRC/build-docker.sh -y
+  fi
 }
 
 start_docker () {
@@ -271,11 +275,12 @@ while getopts ":hy" opt; do
       echo "Usage:"
       echo ""
       echo "    install_rhel.sh -h                Display this help message."
-      echo "    install_rhel.sh [-y] [-db]        Install with docker-compose."
+      echo "    install_rhel.sh [-y] [-dbn]       Install with docker-compose."
       echo ""
       echo "Options:"
       echo "    -d                                Development mode."
       echo "    -b                                Build containers."
+      echo "    -n                                Build containers with --no-cache."
       echo "    -y                                Force installation without prompting."
       echo ""      
       exit 0
@@ -297,9 +302,10 @@ shift $((OPTIND -1))
 
 DO_DEV_INSTALL=false
 DOCKER_BUILD=false
+NO_CACHE=false
 DO_OPERATION="install"
 
-while getopts ":dbu" opt; do
+while getopts ":dbun" opt; do
   case ${opt} in
     u )
       DO_OPERATION="update"
@@ -309,6 +315,9 @@ while getopts ":dbu" opt; do
       ;;
     b )
       DOCKER_BUILD=true
+      ;;
+    n )
+      NO_CACHE=true
       ;;
     \? )
       echo "Invalid Option: -$OPTARG" 1>&2

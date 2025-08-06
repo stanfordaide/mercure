@@ -10,6 +10,65 @@ A flexible DICOM routing and processing solution with user-friendly web interfac
 Installation instructions and usage information can be found in the project documentation:  
 https://mercure-imaging.org/docs/index.html
 
+## RHEL/CentOS Installation
+
+mercure provides dedicated support for Red Hat Enterprise Linux (RHEL) and CentOS 8 or higher. To install on RHEL/CentOS:
+
+1. Clone the repository and navigate to it:
+```bash
+git clone https://github.com/mercure-imaging/mercure.git
+cd mercure
+```
+
+2. Run the RHEL installation script:
+```bash
+./install_rhel.sh
+```
+
+### Installation Options
+
+The RHEL installer supports several options:
+
+```bash
+# Display help
+./install_rhel.sh -h
+
+# Basic installation with prompts
+./install_rhel.sh
+
+# Force installation without prompts
+./install_rhel.sh -y
+
+# Install and build containers
+./install_rhel.sh -b
+
+# Development mode installation
+./install_rhel.sh -d
+
+# Clean build (no cache)
+./install_rhel.sh -b -n
+```
+
+### What the RHEL Installer Does
+
+1. Checks for RHEL/CentOS 8+ compatibility
+2. Creates necessary users and directories
+3. Installs required packages (git, jq, python3, etc.)
+4. Installs and configures Docker + Docker Compose
+5. Sets up configuration files
+6. Builds or pulls Docker images
+7. Starts the services
+
+### Post-Installation
+
+After installation:
+1. Access the web interface at `http://localhost:8000`
+2. Default DICOM port is 11112
+3. Configuration files are in `/opt/mercure/config`
+4. Data is stored in `/opt/mercure/data`
+
+For more detailed information, refer to the full documentation at https://mercure-imaging.org/docs/index.html
+
 
 ## Receiver
 The receiver listens on a tcp port for incoming DICOM files. Received files are run through
