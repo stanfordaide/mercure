@@ -1,15 +1,19 @@
-version: "3.9"
 services:
   ui:
+    container_name: mercure_ui_1
     user: "${UID}:${DOCKER_GID}"
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
-      worker_fast:
+      worker_fast_1:
         condition: service_started
-      worker_slow:
+      worker_fast_2:
+        condition: service_started
+      worker_slow_1:
+        condition: service_started
+      worker_slow_2:
         condition: service_started
     image: mercureimaging/mercure-ui${IMAGE_TAG}
     restart: always
@@ -22,8 +26,11 @@ services:
     environment:
       MERCURE_RUNNER: docker
       REDIS_URL: redis://redis:6379/0
+    networks:
+      - mercure_network
 
   db:
+    container_name: mercure_db_1
     image: library/postgres:14-alpine
     restart: always
     env_file:
@@ -38,8 +45,11 @@ services:
       - db-data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U mercure" ]
+    networks:
+      - mercure_network
 
   receiver:
+    container_name: mercure_receiver_1
     user: "${UID}:${GID}"
     image: mercureimaging/mercure-receiver${IMAGE_TAG}
     restart: always
@@ -54,8 +64,11 @@ services:
     environment:
       MERCURE_RUNNER: docker
       REDIS_URL: redis://redis:6379/0
+    networks:
+      - mercure_network
 
   cleaner:
+    container_name: mercure_cleaner_1
     user: "${UID}:${GID}"
     image: mercureimaging/mercure-cleaner${IMAGE_TAG}
     restart: always
@@ -68,8 +81,11 @@ services:
     environment:
       MERCURE_RUNNER: docker
       REDIS_URL: redis://redis:6379/0
+    networks:
+      - mercure_network
 
   dispatcher:
+    container_name: mercure_dispatcher_1
     user: "${UID}:${GID}"
     image: mercureimaging/mercure-dispatcher${IMAGE_TAG}
     restart: always
@@ -82,8 +98,11 @@ services:
     environment:
       MERCURE_RUNNER: docker
       REDIS_URL: redis://redis:6379/0
+    networks:
+      - mercure_network
 
   processor:
+    container_name: mercure_processor_1
     user: "${UID}:${DOCKER_GID}"
     image: mercureimaging/mercure-processor${IMAGE_TAG}
     restart: always
@@ -97,8 +116,11 @@ services:
     environment:
       MERCURE_RUNNER: docker
       REDIS_URL: redis://redis:6379/0
+    networks:
+      - mercure_network
 
   router:
+    container_name: mercure_router_1
     user: "${UID}:${GID}"
     image: mercureimaging/mercure-router${IMAGE_TAG}
     restart: always
@@ -111,8 +133,11 @@ services:
     environment:
       MERCURE_RUNNER: docker
       REDIS_URL: redis://redis:6379/0
+    networks:
+      - mercure_network
 
   bookkeeper:
+    container_name: mercure_bookkeeper_1
     user: "${UID}:${GID}"
     image: mercureimaging/mercure-bookkeeper${IMAGE_TAG}
     restart: always
@@ -125,43 +150,86 @@ services:
     environment:
       MERCURE_RUNNER: docker
       REDIS_URL: redis://redis:6379/0
+    networks:
+      - mercure_network
   
   redis:
+    container_name: mercure_redis_1
     image: redis
     restart: always
     command: redis-server --save 20 1
     volumes: 
       - redis-cache:/data
+    networks:
+      - mercure_network
 
-  worker_fast:
+  worker_fast_1:
+    container_name: mercure_worker_fast_1
     user: "${UID}:${GID}"
     image: mercureimaging/mercure-worker${IMAGE_TAG}
     restart: always
     depends_on:
       - redis
-    deploy:
-      replicas: 2
     volumes:
       - config:/opt/mercure/config
       - data:/opt/mercure/data
     environment:
       WORKER_QUEUE: mercure_fast
       REDIS_URL: redis://redis:6379/0
+    networks:
+      - mercure_network
 
-  worker_slow:
+  worker_fast_2:
+    container_name: mercure_worker_fast_2
     user: "${UID}:${GID}"
     image: mercureimaging/mercure-worker${IMAGE_TAG}
     restart: always
     depends_on:
       - redis
-    deploy:
-      replicas: 2
+    volumes:
+      - config:/opt/mercure/config
+      - data:/opt/mercure/data
+    environment:
+      WORKER_QUEUE: mercure_fast
+      REDIS_URL: redis://redis:6379/0
+    networks:
+      - mercure_network
+
+  worker_slow_1:
+    container_name: mercure_worker_slow_1
+    user: "${UID}:${GID}"
+    image: mercureimaging/mercure-worker${IMAGE_TAG}
+    restart: always
+    depends_on:
+      - redis
     volumes:
       - config:/opt/mercure/config
       - data:/opt/mercure/data
     environment:
       WORKER_QUEUE: mercure_slow
       REDIS_URL: redis://redis:6379/0
+    networks:
+      - mercure_network
+
+  worker_slow_2:
+    container_name: mercure_worker_slow_2
+    user: "${UID}:${GID}"
+    image: mercureimaging/mercure-worker${IMAGE_TAG}
+    restart: always
+    depends_on:
+      - redis
+    volumes:
+      - config:/opt/mercure/config
+      - data:/opt/mercure/data
+    environment:
+      WORKER_QUEUE: mercure_slow
+      REDIS_URL: redis://redis:6379/0
+    networks:
+      - mercure_network
+
+networks:
+  mercure_network:
+    name: mercure_default
 
 volumes:
   db-data:

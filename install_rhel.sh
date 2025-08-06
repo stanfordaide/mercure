@@ -202,29 +202,12 @@ start_docker () {
   MERCURE_DOCKER_GID=$(getent group docker | cut -d: -f3)
   
   # Create .env file for docker compose
-  echo "## Creating environment configuration..."
   cat > .env << EOF
 UID=$MERCURE_UID
 GID=$MERCURE_GID
 DOCKER_GID=$MERCURE_DOCKER_GID
 IMAGE_TAG=:${MERCURE_TAG:-$VERSION}
 EOF
-  echo "Created .env file with:"
-  echo "UID=$MERCURE_UID"
-  echo "GID=$MERCURE_GID"
-  echo "DOCKER_GID=$MERCURE_DOCKER_GID"
-  echo "IMAGE_TAG=:${MERCURE_TAG:-$VERSION}"
-
-  # Pull images explicitly before starting
-  echo "## Pulling Docker images..."
-  sudo docker pull mercureimaging/mercure-ui${IMAGE_TAG:-:${MERCURE_TAG:-$VERSION}}
-  sudo docker pull mercureimaging/mercure-receiver${IMAGE_TAG:-:${MERCURE_TAG:-$VERSION}}
-  sudo docker pull mercureimaging/mercure-router${IMAGE_TAG:-:${MERCURE_TAG:-$VERSION}}
-  sudo docker pull mercureimaging/mercure-processor${IMAGE_TAG:-:${MERCURE_TAG:-$VERSION}}
-  sudo docker pull mercureimaging/mercure-dispatcher${IMAGE_TAG:-:${MERCURE_TAG:-$VERSION}}
-  sudo docker pull mercureimaging/mercure-cleaner${IMAGE_TAG:-:${MERCURE_TAG:-$VERSION}}
-  sudo docker pull mercureimaging/mercure-bookkeeper${IMAGE_TAG:-:${MERCURE_TAG:-$VERSION}}
-  sudo docker pull mercureimaging/mercure-worker${IMAGE_TAG:-:${MERCURE_TAG:-$VERSION}}
   
   sudo docker compose up -d
   popd
@@ -252,22 +235,6 @@ docker_install () {
     setup_docker_dev
   fi
   start_docker
-  
-  # Wait for containers to start and check their status
-  echo "## Waiting for containers to start..."
-  sleep 10
-  echo "## Checking container status..."
-  pushd $MERCURE_BASE
-  sudo docker compose ps
-  
-  # Check if any containers failed to start
-  if [ $(sudo docker compose ps --format json | grep -c "\"State\": \"running\"") -lt 8 ]; then
-    echo "## Warning: Some containers failed to start. Checking logs..."
-    sudo docker compose logs
-    echo "## Please check the logs above for errors."
-  fi
-  popd
-  
   # Clean up the .env file after docker compose is up
   rm -f $MERCURE_BASE/.env
 }
