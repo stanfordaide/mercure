@@ -268,8 +268,12 @@ docker_update () {
 }
 
 FORCE_INSTALL="n"
+DO_DEV_INSTALL=false
+DOCKER_BUILD=false
+NO_CACHE=false
+DO_OPERATION="install"
 
-while getopts ":hy" opt; do
+while getopts ":hydbn" opt; do
   case ${opt} in
     h )
       echo "Usage:"
@@ -288,6 +292,15 @@ while getopts ":hy" opt; do
     y )
       FORCE_INSTALL="y"
       ;;
+    d )
+      DO_DEV_INSTALL=true
+      ;;
+    b )
+      DOCKER_BUILD=true
+      ;;
+    n )
+      NO_CACHE=true
+      ;;
     \? )
       echo "Invalid Option: -$OPTARG" 1>&2
       exit 1
@@ -300,24 +313,10 @@ while getopts ":hy" opt; do
 done
 shift $((OPTIND -1))
 
-DO_DEV_INSTALL=false
-DOCKER_BUILD=false
-NO_CACHE=false
-DO_OPERATION="install"
-
-while getopts ":dbun" opt; do
+while getopts ":u" opt; do
   case ${opt} in
     u )
       DO_OPERATION="update"
-      ;;
-    d )
-      DO_DEV_INSTALL=true
-      ;;
-    b )
-      DOCKER_BUILD=true
-      ;;
-    n )
-      NO_CACHE=true
       ;;
     \? )
       echo "Invalid Option: -$OPTARG" 1>&2
