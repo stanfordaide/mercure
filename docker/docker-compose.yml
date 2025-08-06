@@ -1,26 +1,7 @@
 version: "3.9"
-x-env: &env
-  environment:
-    MERCURE_RUNNER: docker
-    REDIS_URL: redis://redis:6379/0
-x-volumes: &volumes
-  volumes:
-    - config:/opt/mercure/config
-    - data:/opt/mercure/data
-
-x-volumes-docker: &volumes-docker
-  volumes:
-    - config:/opt/mercure/config
-    - data:/opt/mercure/data
-    - /var/run/docker.sock:/var/run/docker.sock
-
-x-docker-user: &docker-user
-  user: "${UID}:${DOCKER_GID}"
-x-user: &user
-  user: "${UID}:${GID}"
 services:
   ui:
-    <<: *docker-user
+    user: "${UID}:${DOCKER_GID}"
     depends_on:
       db:
         condition: service_healthy
@@ -30,13 +11,18 @@ services:
         condition: service_started
       worker_slow:
         condition: service_started
-      
     image: mercureimaging/mercure-ui${IMAGE_TAG}
     restart: always
     ports:
       - "8000:8000"
-    <<: *volumes-docker
-    <<: *env
+    volumes:
+      - config:/opt/mercure/config
+      - data:/opt/mercure/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      MERCURE_RUNNER: docker
+      REDIS_URL: redis://redis:6379/0
+
   db:
     image: library/postgres:14-alpine
     restart: always
@@ -54,7 +40,7 @@ services:
       test: [ "CMD-SHELL", "pg_isready -U mercure" ]
 
   receiver:
-    <<: *user
+    user: "${UID}:${GID}"
     image: mercureimaging/mercure-receiver${IMAGE_TAG}
     restart: always
     depends_on:
@@ -62,58 +48,83 @@ services:
         condition: service_healthy
     ports:
       - "11112:11112"
-    <<: *volumes
-    <<: *env
+    volumes:
+      - config:/opt/mercure/config
+      - data:/opt/mercure/data
+    environment:
+      MERCURE_RUNNER: docker
+      REDIS_URL: redis://redis:6379/0
 
   cleaner:
-    <<: *user
+    user: "${UID}:${GID}"
     image: mercureimaging/mercure-cleaner${IMAGE_TAG}
     restart: always
     depends_on:
       bookkeeper:
         condition: service_healthy
-    <<: *volumes
-    <<: *env
+    volumes:
+      - config:/opt/mercure/config
+      - data:/opt/mercure/data
+    environment:
+      MERCURE_RUNNER: docker
+      REDIS_URL: redis://redis:6379/0
 
   dispatcher:
-    <<: *user
+    user: "${UID}:${GID}"
     image: mercureimaging/mercure-dispatcher${IMAGE_TAG}
     restart: always
     depends_on:
       bookkeeper:
         condition: service_healthy
-    <<: *volumes
-    <<: *env
+    volumes:
+      - config:/opt/mercure/config
+      - data:/opt/mercure/data
+    environment:
+      MERCURE_RUNNER: docker
+      REDIS_URL: redis://redis:6379/0
 
   processor:
-    <<: *docker-user
+    user: "${UID}:${DOCKER_GID}"
     image: mercureimaging/mercure-processor${IMAGE_TAG}
     restart: always
     depends_on:
       bookkeeper:
         condition: service_healthy
-    <<: *volumes-docker
-    <<: *env
+    volumes:
+      - config:/opt/mercure/config
+      - data:/opt/mercure/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      MERCURE_RUNNER: docker
+      REDIS_URL: redis://redis:6379/0
 
   router:
-    <<: *user
+    user: "${UID}:${GID}"
     image: mercureimaging/mercure-router${IMAGE_TAG}
     restart: always
     depends_on:
       bookkeeper:
         condition: service_healthy
-    <<: *volumes
-    <<: *env
+    volumes:
+      - config:/opt/mercure/config
+      - data:/opt/mercure/data
+    environment:
+      MERCURE_RUNNER: docker
+      REDIS_URL: redis://redis:6379/0
 
   bookkeeper:
-    <<: *user
+    user: "${UID}:${GID}"
     image: mercureimaging/mercure-bookkeeper${IMAGE_TAG}
     restart: always
     depends_on:
       db:
         condition: service_healthy
-    <<: *volumes
-    <<: *env
+    volumes:
+      - config:/opt/mercure/config
+      - data:/opt/mercure/data
+    environment:
+      MERCURE_RUNNER: docker
+      REDIS_URL: redis://redis:6379/0
   
   redis:
     image: redis
@@ -123,30 +134,34 @@ services:
       - redis-cache:/data
 
   worker_fast:
-    <<: *user
+    user: "${UID}:${GID}"
     image: mercureimaging/mercure-worker${IMAGE_TAG}
     restart: always
     depends_on:
       - redis
     deploy:
       replicas: 2
+    volumes:
+      - config:/opt/mercure/config
+      - data:/opt/mercure/data
     environment:
       WORKER_QUEUE: mercure_fast
       REDIS_URL: redis://redis:6379/0
-    <<: *volumes
 
   worker_slow:
-    <<: *user
+    user: "${UID}:${GID}"
     image: mercureimaging/mercure-worker${IMAGE_TAG}
     restart: always
     depends_on:
       - redis
     deploy:
       replicas: 2
+    volumes:
+      - config:/opt/mercure/config
+      - data:/opt/mercure/data
     environment:
       WORKER_QUEUE: mercure_slow
       REDIS_URL: redis://redis:6379/0
-    <<: *volumes
 
 volumes:
   db-data:
