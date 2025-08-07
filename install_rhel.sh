@@ -190,14 +190,11 @@ setup_docker_dev () {
 
 build_docker () {
   echo "## Building mercure docker containers..."
-  # Change to source directory to ensure build script can be found
-  pushd "$MERCURE_SRC"
   if [ "$NO_CACHE" = true ]; then
-    sudo ./build-docker.sh -y -n
+    sudo "$MERCURE_SRC/docker-build.sh" -y -n
   else
-    sudo ./build-docker.sh -y
+    sudo "$MERCURE_SRC/docker-build.sh" -y
   fi
-  popd
 }
 
 start_docker () {
