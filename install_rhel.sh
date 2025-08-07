@@ -357,8 +357,9 @@ docker_install
 if [ $INSTALL_ORTHANC = true ]; then 
   echo "Installing Orthanc..."
   pushd addons/orthanc
-  sudo docker network create mercure_default || true
-  sudo docker-compose up -d
+  # Ensure the network exists but don't fail if it does
+  sudo docker network inspect mercure_default >/dev/null 2>&1 || sudo docker network create mercure_default
+  sudo docker compose up -d
   popd
 fi
 
