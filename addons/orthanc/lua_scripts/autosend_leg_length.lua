@@ -25,11 +25,11 @@ function OnStableStudy(studyId, tags, metadata)
             print('   ✓ Queued for MERCURE (Job: ' .. job .. ')')
             
             -- Log to Orthanc logs for audit trail
-            LogWarning('AUTO-FORWARD: Bone length study forwarded to MERCURE - Patient: ' .. 
+            PrintWarning('AUTO-FORWARD: Bone length study forwarded to MERCURE - Patient: ' .. 
                       patientName .. ', Study: ' .. studyId .. ', Job: ' .. job)
         else
             print('   ✗ FAILED to queue for MERCURE')
-            LogError('AUTO-FORWARD FAILED: Bone length study send failed - Study: ' .. studyId)
+            PrintError('AUTO-FORWARD FAILED: Bone length study send failed - Study: ' .. studyId)
         end
     end
 end
