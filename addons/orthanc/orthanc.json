@@ -9,7 +9,7 @@
     "ConcurrentJobs" : 2,                          // Max parallel processing jobs
   
     // Scripts and plugins
-    "LuaScripts" : ["/etc/orthanc/lua"],
+    "LuaScripts" : ["/etc/orthanc/lua/autosend_leg_length.lua"],
     "Plugins" : [ 
       "/usr/share/orthanc/plugins", 
       "/usr/local/share/orthanc/plugins"
