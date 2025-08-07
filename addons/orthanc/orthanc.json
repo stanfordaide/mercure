@@ -69,7 +69,7 @@
   
     // Network configuration
     "DicomModalities" : {
-      "MERCURE" : [ "MERCURE_SENDER", "mercure_receiver_1", 11112 ]  // [AET, IP, Port]
+        "MERCURE" : [ "orthanc", "172.17.0.1", 11112 ]
     },
     "DicomModalitiesInDatabase" : false,         // Store modalities in database vs config
     "DicomEchoChecksFind" : false,              // Test C-FIND capability during echo test
