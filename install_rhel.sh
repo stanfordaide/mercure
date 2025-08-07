@@ -272,8 +272,9 @@ DO_DEV_INSTALL=false
 DOCKER_BUILD=false
 NO_CACHE=false
 DO_OPERATION="install"
+INSTALL_ORTHANC=false
 
-while getopts ":hydbn" opt; do
+while getopts ":hydbno" opt; do
   case ${opt} in
     h )
       echo "Usage:"
@@ -286,6 +287,7 @@ while getopts ":hydbn" opt; do
       echo "    -b                                Build containers."
       echo "    -n                                Build containers with --no-cache."
       echo "    -y                                Force installation without prompting."
+      echo "    -o                                Install Orthanc integration."
       echo ""      
       exit 0
       ;;
@@ -300,6 +302,9 @@ while getopts ":hydbn" opt; do
       ;;
     n )
       NO_CACHE=true
+      ;;
+    o )
+      INSTALL_ORTHANC=true
       ;;
     \? )
       echo "Invalid Option: -$OPTARG" 1>&2
@@ -348,5 +353,13 @@ else
 fi
 
 docker_install
+
+if [ $INSTALL_ORTHANC = true ]; then 
+  echo "Installing Orthanc..."
+  pushd addons/orthanc
+  sudo docker network create mercure_default || true
+  sudo docker-compose up -d
+  popd
+fi
 
 echo "Installation complete"

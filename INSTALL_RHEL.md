@@ -109,69 +109,24 @@ After installation, mercure uses the following directory structure:
 
 ## Installing with Orthanc Integration
 
-mercure can be integrated with Orthanc for enhanced DICOM functionality. Here's how to set up both systems:
+mercure can be integrated with Orthanc for enhanced DICOM functionality. To install both systems together, use the `-o` flag:
 
-### 1. Install mercure First
-
-Complete the mercure installation as described above:
 ```bash
-./install_rhel.sh -y
+./install_rhel.sh -y -o
 ```
 
-### 2. Install Orthanc
+This will automatically:
+1. Install mercure
+2. Set up Orthanc with the correct configuration
+3. Create the necessary Docker network
+4. Start both services
 
-1. Create a directory for Orthanc:
+For a clean installation with no cache, you can combine with `-b` and `-n` flags:
 ```bash
-sudo mkdir -p /opt/orthanc/{config,db}
+./install_rhel.sh -y -o -b -n
 ```
 
-2. Create a Docker Compose file for Orthanc (`/opt/orthanc/docker-compose.yml`):
-```yaml
-version: '3.1'
-
-services:
-  orthanc:
-    image: jodogne/orthanc-python
-    container_name: orthanc
-    volumes:
-      - ./config:/etc/orthanc
-      - ./db:/var/lib/orthanc/db
-    ports:
-      - "8042:8042"      # Web interface
-      - "4242:4242"      # DICOM port
-    restart: always
-    networks:
-      - mercure_network
-
-networks:
-  mercure_network:
-    external: true
-    name: mercure_default
-```
-
-3. Create Orthanc configuration (`/opt/orthanc/config/orthanc.json`):
-```json
-{
-  "Name": "Orthanc",
-  "StorageDirectory": "/var/lib/orthanc/db",
-  "IndexDirectory": "/var/lib/orthanc/db",
-  "StorageCompression": false,
-  "HttpPort": 8042,
-  "DicomPort": 4242,
-  "DicomAet": "ORTHANC",
-  "DicomModalities": {
-    "mercure": [ "MERCURE", "172.17.0.1", 11112 ]
-  }
-}
-```
-
-4. Start Orthanc:
-```bash
-cd /opt/orthanc
-sudo docker compose up -d
-```
-
-### 3. Configure Integration
+### Configure Integration
 
 1. Add Orthanc as a DICOM target in mercure (`/opt/mercure/config/mercure.json`):
 ```json
