@@ -8,6 +8,8 @@ services:
       - orthanc.json
     environment:
       - ORTHANC_NAME=HelloWorld
+    env_file:
+      - ../../configuration/timezone.env
     volumes:
       - db:/var/lib/orthanc/db/
       - ./lua_scripts:/etc/orthanc/lua

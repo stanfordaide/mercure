@@ -26,6 +26,8 @@ services:
     environment:
       MERCURE_RUNNER: docker
       REDIS_URL: redis://redis:6379/0
+    env_file:
+      - /opt/mercure/config/timezone.env
     networks:
       - mercure_network
 
@@ -64,6 +66,8 @@ services:
     environment:
       MERCURE_RUNNER: docker
       REDIS_URL: redis://redis:6379/0
+    env_file:
+      - /opt/mercure/config/timezone.env
     networks:
       - mercure_network
 
@@ -81,6 +85,8 @@ services:
     environment:
       MERCURE_RUNNER: docker
       REDIS_URL: redis://redis:6379/0
+    env_file:
+      - /opt/mercure/config/timezone.env
     networks:
       - mercure_network
 
@@ -98,6 +104,8 @@ services:
     environment:
       MERCURE_RUNNER: docker
       REDIS_URL: redis://redis:6379/0
+    env_file:
+      - /opt/mercure/config/timezone.env
     networks:
       - mercure_network
 
@@ -116,6 +124,8 @@ services:
     environment:
       MERCURE_RUNNER: docker
       REDIS_URL: redis://redis:6379/0
+    env_file:
+      - /opt/mercure/config/timezone.env
     networks:
       - mercure_network
 
@@ -133,6 +143,8 @@ services:
     environment:
       MERCURE_RUNNER: docker
       REDIS_URL: redis://redis:6379/0
+    env_file:
+      - /opt/mercure/config/timezone.env
     networks:
       - mercure_network
 
@@ -150,6 +162,8 @@ services:
     environment:
       MERCURE_RUNNER: docker
       REDIS_URL: redis://redis:6379/0
+    env_file:
+      - /opt/mercure/config/timezone.env
     networks:
       - mercure_network
   

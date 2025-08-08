@@ -51,7 +51,7 @@
     },
     "rules": {
         "LegLengthRule": {
-            "rule": "False",
+            "rule": "tags.StudyDescription == \"LPCH XR EXTREMITY BILATERAL BONE LENGTH\"",
             "target": [
                 "OrthancLPCH"
             ],
@@ -84,5 +84,17 @@
         }
     },
     "modules": {
-    }
+        "TestModule": {
+            "docker_tag": "stanfordaide/mercure-testmodule:latest",
+            "additional_volumes": "",
+            "environment": "",
+            "docker_arguments": "",
+            "settings": {},
+            "contact": "",
+            "comment": "",
+            "constraints": "",
+            "resources": "",
+            "requires_root": false
+        }
+    },
 }
