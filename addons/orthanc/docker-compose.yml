@@ -8,8 +8,8 @@ services:
       - orthanc.json
     environment:
       - ORTHANC_NAME=HelloWorld
-    env_file:
-      - ../../configuration/timezone.env
+      - TZ=America/Los_Angeles
+
     volumes:
       - db:/var/lib/orthanc/db/
       - ./lua_scripts:/etc/orthanc/lua
@@ -24,6 +24,8 @@ services:
       - 8008:80
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    environment:
+      - TZ=America/Los_Angeles
     restart: always
 
 secrets:
