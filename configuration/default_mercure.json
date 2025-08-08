@@ -36,8 +36,52 @@
     "server_time"                :    "UTC",
     "local_time"                 :    "UTC",    
     "targets": {
+        "OrthancLPCH": {
+            "target_type": "dicom",
+            "contact": "",
+            "comment": "",
+            "direction": "both",
+            "ip": "172.17.0.1",
+            "port": "4242",
+            "aet_target": "ORTHANC_LPCH",
+            "aet_source": "MERCURE",
+            "pass_sender_aet": false,
+            "pass_receiver_aet": false
+        }
     },
     "rules": {
+        "LegLengthRule": {
+            "rule": "False",
+            "target": [
+                "OrthancLPCH"
+            ],
+            "disabled": false,
+            "fallback": false,
+            "contact": "",
+            "comment": "Default rule: (tags.StudyDescription == \"LPCH XR EXTREMITY BILATERAL BONE LENGTH\") and (float(tags.SeriesNumber)<1000.0)",
+            "tags": "",
+            "action": "both",
+            "action_trigger": "series",
+            "study_trigger_condition": "timeout",
+            "study_force_completion_action": "discard",
+            "study_trigger_series": "",
+            "priority": "normal",
+            "processing_module": [
+                "DummyDocker"
+            ],
+            "processing_settings": {},
+            "processing_retain_images": false,
+            "notification_email": "",
+            "notification_webhook": "",
+            "notification_payload": "",
+            "notification_payload_body": "Rule \"{{ rule }}\" triggered {{ event }}\r\n{% if details is defined and details|length %}\r\nDetails:\r\n{{ details }}\r\n{% endif %}",
+            "notification_email_body": "Rule \"{{ rule }}\" triggered {{ event }}\r\nName: {{ patient_name }}\r\nACC: {{ acc }}\r\nMRN: {{ mrn }}\r\n{% if details is defined and details|length %}\r\nDetails:\r\n{{ details }}\r\n{% endif %}",
+            "notification_email_type": "plain",
+            "notification_trigger_reception": true,
+            "notification_trigger_completion": true,
+            "notification_trigger_completion_on_request": false,
+            "notification_trigger_error": true
+        }
     },
     "modules": {
     }
