@@ -114,6 +114,18 @@ create_folders () {
   else
     echo "## $DATA_PATH already exists."
   fi
+
+  # Create addons directory
+  create_folder "$MERCURE_BASE/addons"
+}
+
+install_scripts () {
+  echo "## Installing utility scripts..."
+  # Copy cleanup script
+  sudo cp "$MERCURE_SRC/cleanup.sh" "$MERCURE_BASE/"
+  sudo chown $OWNER:$OWNER "$MERCURE_BASE/cleanup.sh"
+  sudo chmod +x "$MERCURE_BASE/cleanup.sh"
+  echo "✓ Installed cleanup script to $MERCURE_BASE/cleanup.sh"
 }
 
 install_configuration () {
@@ -229,6 +241,7 @@ docker_install () {
   create_user
   create_folders
   install_configuration
+  install_scripts
   install_packages
   install_docker
   if [ $DOCKER_BUILD = true ]; then
@@ -260,11 +273,45 @@ docker_update () {
       exit 0
     fi
   fi
+
+  # Stop addons first if they exist
+  if [ -d "$MERCURE_BASE/addons" ]; then
+    echo "## Stopping addons..."
+    for addon in "$MERCURE_BASE/addons"/*/ ; do
+      if [ -f "$addon/docker-compose.yml" ]; then
+        addon_name=$(basename "$addon")
+        echo "## Stopping $addon_name addon..."
+        pushd "$addon"
+        sudo docker compose down || true
+        popd
+      fi
+    done
+  fi
+
+  # Stop main services
+  echo "## Stopping main services..."
   pushd $MERCURE_BASE
   sudo docker compose down || true
   popd
+
+  # Update main services
   setup_docker true
   start_docker
+
+  # Restart addons if they exist
+  if [ -d "$MERCURE_BASE/addons" ]; then
+    echo "## Restarting addons..."
+    for addon in "$MERCURE_BASE/addons"/*/ ; do
+      if [ -f "$addon/docker-compose.yml" ]; then
+        addon_name=$(basename "$addon")
+        echo "## Starting $addon_name addon..."
+        pushd "$addon"
+        sudo docker compose up -d
+        echo "✓ $addon_name restarted"
+        popd
+      fi
+    done
+  fi
 }
 
 FORCE_INSTALL="n"
@@ -354,13 +401,34 @@ fi
 
 docker_install
 
-if [ $INSTALL_ORTHANC = true ]; then 
-  echo "Installing Orthanc..."
-  pushd addons/orthanc
-  # Ensure the network exists but don't fail if it does
-  sudo docker network inspect mercure_default >/dev/null 2>&1 || sudo docker network create mercure_default
-  sudo docker compose up -d
-  popd
-fi
+install_orthanc () {
+  if [ $INSTALL_ORTHANC = true ]; then
+    echo "## Installing Orthanc addon..."
+    # Create orthanc directory
+    create_folder "$MERCURE_BASE/addons/orthanc"
+    
+    # Copy orthanc files
+    echo "## Copying Orthanc configuration files..."
+    sudo cp -r "$MERCURE_SRC/addons/orthanc"/* "$MERCURE_BASE/addons/orthanc/"
+    
+    # Set permissions
+    sudo chown -R $OWNER:$OWNER "$MERCURE_BASE/addons/orthanc"
+    
+    # Ensure network exists
+    echo "## Setting up Docker network..."
+    sudo docker network inspect mercure_default >/dev/null 2>&1 || \
+      sudo docker network create mercure_default
+    
+    # Start orthanc
+    echo "## Starting Orthanc services..."
+    pushd "$MERCURE_BASE/addons/orthanc"
+    sudo docker compose up -d
+    echo "✓ Orthanc addon installed successfully"
+    popd
+  fi
+}
+
+# Install Orthanc if requested
+install_orthanc
 
 echo "Installation complete"
