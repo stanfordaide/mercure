@@ -1,11 +1,11 @@
--- Helper function to check if any instance in the study has "OUTPUT" in StudyDescription
-function hasOutputInDescription(instances)
+-- Helper function to check if any instance in the study has "AIDEOUT" in StudyDescription
+function hasAIDEOUTInDescription(instances)
     for _, instance in pairs(instances) do
         local instanceTags = ParseJson(RestApiGet('/instances/' .. instance['ID'] .. '/tags?simplify'))
         if instanceTags then
             local studyDescription = instanceTags['StudyDescription'] or ''
-            if string.find(string.upper(studyDescription), 'OUTPUT') then
-                print('   Found OUTPUT in StudyDescription: ' .. studyDescription)
+            if string.find(string.upper(studyDescription), 'AIDEOUT') then
+                print('   Found AIDEOUT in StudyDescription: ' .. studyDescription)
                 return true
             end
         end
@@ -32,8 +32,8 @@ function OnStableStudy(studyId, tags, metadata, origin)
         local instances = ParseJson(RestApiGet('/studies/' .. studyId .. '/instances'))
         
         -- Check if already processed
-        if hasOutputInDescription(instances) then
-            print('   Study already has OUTPUT in description, skipping processing')
+        if hasAIDEOUTInDescription(instances) then
+            print('   Study already has AIDEOUT in description, skipping processing')
             return
         end
 
