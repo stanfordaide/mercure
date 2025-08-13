@@ -84,8 +84,8 @@
         }
     },
     "modules": {
-        "TestModule": {
-            "docker_tag": "stanfordaide/mercure-testmodule:latest",
+        "PediatricLegLength": {
+            "docker_tag": "stanfordaide/stanfordaide/pediatric-leglength",
             "additional_volumes": "",
             "environment": "",
             "docker_arguments": "",
