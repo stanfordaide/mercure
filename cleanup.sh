@@ -185,9 +185,9 @@ if [ "$PURGE" = true ]; then
     sudo rm -rf /etc/mercure || true
     
     # Remove any Docker secrets that might have been created (only in swarm mode)
-    if sudo docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null | grep -q "active"; then
+    if sudo docker info >/dev/null 2>&1 && sudo docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null | grep -q "active" 2>/dev/null; then
         echo "Removing Docker secrets..."
-        sudo docker secret ls --filter "name=orthanc" --format "{{.Name}}" | while read secret; do
+        sudo docker secret ls --filter "name=orthanc" --format "{{.Name}}" 2>/dev/null | while read secret; do
             echo "Removing secret: $secret"
             sudo docker secret rm "$secret" || true
         done
