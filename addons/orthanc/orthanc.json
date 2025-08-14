@@ -2,7 +2,7 @@
     // Basic server configuration
     "Name" : "Orthanc",
     "StorageDirectory" : "/var/lib/orthanc/db",    // Path for DICOM files storage
-    "IndexDirectory" : "/var/lib/orthanc/db",      // Path for SQLite database index
+    // "IndexDirectory" : "/var/lib/orthanc/db",      // Path for SQLite database index - REMOVE is postgres enabled
     "StorageCompression" : false,                   // Compress stored DICOM files
     "MaximumStorageSize" : 0,                      // Storage limit in MB (0 = unlimited)
     "MaximumPatientCount" : 0,                     // Patient limit (0 = unlimited)
@@ -15,6 +15,24 @@
       "/usr/local/share/orthanc/plugins"
     ],
   
+
+    // PostgreSQL Database Configuration
+    "PostgreSQL" : {
+      "EnableIndex" : true,                    // Use PostgreSQL for DICOM index
+      "EnableStorage" : false,                 // Keep file storage local (recommended)
+      "Host" : "mercure_db_1",                // Database container name
+      "Port" : 5432,                          // PostgreSQL port
+      "Database" : "orthanc",                 // Database name (create this separately)
+      "Username" : "mercure",                 // Use existing Mercure DB user
+      "Password" : "ChangePasswordHere",      // Get this from /opt/mercure/config/db.env
+      "EnableSsl" : false,                    // SSL not needed for internal container network
+      "MaximumConnectionRetries" : 10,        // Connection retry attempts
+      "ConnectionRetryInterval" : 5,          // Seconds between retries
+      "PrepareIndex" : true,                  // Auto-create database schema
+      "Lock" : true                           // Use database-level locking
+    },
+
+
     // HTTP server settings
     "HttpServerEnabled" : true,                    // Enable REST API and web interface
     "OrthancExplorerEnabled" : true,               // Enable web UI
@@ -71,11 +89,11 @@
     "DicomModalities" : {
         "MERCURE" : [ "orthanc", "172.17.0.1", 11112 ]
     },
-    "DicomModalitiesInDatabase" : false,         // Store modalities in database vs config
+    "DicomModalitiesInDatabase" : true,         // Store modalities in database vs config
     "DicomEchoChecksFind" : false,              // Test C-FIND capability during echo test
   
     "OrthancPeers" : {},                        // Other Orthanc servers
-    "OrthancPeersInDatabase" : false,           // Store peers in database vs config
+    "OrthancPeersInDatabase" : true,           // Store peers in database vs config
   
     // HTTP client settings
     "HttpProxy" : "",                           // HTTP proxy configuration

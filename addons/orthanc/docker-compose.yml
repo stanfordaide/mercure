@@ -31,8 +31,7 @@ services:
 secrets:
   orthanc.json:
     file: orthanc.json
-volumes:
-  db:
+
 networks:
   default:
     external: true
