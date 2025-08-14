@@ -89,7 +89,7 @@
     "DicomModalities" : {
         "MERCURE" : [ "orthanc", "172.17.0.1", 11112 ]
     },
-    "DicomModalitiesInDatabase" : true,         // Store modalities in database vs config
+    "DicomModalitiesInDatabase" : false,         // Store modalities in config vs database
     "DicomEchoChecksFind" : false,              // Test C-FIND capability during echo test
   
     "OrthancPeers" : {},                        // Other Orthanc servers
