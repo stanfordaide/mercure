@@ -196,8 +196,24 @@ if [ "$PURGE" = true ]; then
     fi
     
     # Remove mercure base directory
-    sudo rm -rf "$MERCURE_BASE"
-    echo "✓ Complete removal successful"
+    echo "Removing mercure base directory..."
+    
+    # Change to parent directory if we're currently in the mercure directory
+    if [ "$(pwd)" = "$MERCURE_BASE" ]; then
+        echo "Changing to parent directory to allow removal..."
+        cd "$(dirname "$MERCURE_BASE")"
+    fi
+    
+    # Force remove the directory and all contents
+    if [ -d "$MERCURE_BASE" ]; then
+        echo "Removing directory: $MERCURE_BASE"
+        sudo rm -rf "$MERCURE_BASE"/*
+        sudo rm -rf "$MERCURE_BASE"/.* 2>/dev/null || true  # Remove hidden files
+        sudo rmdir "$MERCURE_BASE" 2>/dev/null || true
+        echo "✓ Complete removal successful"
+    else
+        echo "Directory $MERCURE_BASE not found or already removed"
+    fi
 fi
 
 echo "Cleanup complete!"
