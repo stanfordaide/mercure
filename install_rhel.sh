@@ -329,6 +329,7 @@ while getopts ":hydbno" opt; do
       echo ""
       echo "    install_rhel.sh -h                Display this help message."
       echo "    install_rhel.sh [-y] [-dbn]       Install with docker-compose."
+      echo "    install_rhel.sh orthanc           Install Orthanc addon on existing installation."
       echo ""
       echo "Options:"
       echo "    -d                                Development mode."
@@ -412,6 +413,32 @@ install_orthanc () {
     echo "## Copying Orthanc configuration files..."
     sudo cp -r "$MERCURE_SRC/addons/orthanc"/* "$MERCURE_BASE/addons/orthanc/"
     
+    # Update Orthanc configuration with generated database password
+    echo "## Configuring Orthanc with database credentials..."
+    if [ -f "$CONFIG_PATH/db.env" ]; then
+      # Source the database environment to get the password
+      source "$CONFIG_PATH/db.env"
+      # Update Orthanc configuration with the actual password
+      sudo sed -i "s/ChangePasswordHere/$POSTGRES_PASSWORD/g" "$MERCURE_BASE/addons/orthanc/orthanc.json"
+      echo "✓ Updated Orthanc configuration with database password"
+      
+      # Create Orthanc database in PostgreSQL
+      echo "## Creating Orthanc database..."
+      if sudo docker ps | grep -q mercure_db_1; then
+        # Wait for database to be ready
+        echo "Waiting for database to be ready..."
+        timeout 30s bash -c 'until sudo docker exec mercure_db_1 pg_isready -U mercure; do sleep 1; done' || true
+        
+        # Create Orthanc database
+        sudo docker exec mercure_db_1 psql -U mercure -d mercure -c "CREATE DATABASE orthanc;" 2>/dev/null || echo "Database 'orthanc' may already exist"
+        echo "✓ Orthanc database created"
+      else
+        echo "Warning: Database container not running. Orthanc database will be created when services start."
+      fi
+    else
+      echo "Warning: Database configuration not found. Orthanc may not connect to database."
+    fi
+    
     # Set permissions
     sudo chown -R $OWNER:$OWNER "$MERCURE_BASE/addons/orthanc"
     
@@ -433,3 +460,35 @@ install_orthanc () {
 install_orthanc
 
 echo "Installation complete"
+
+# Function to install Orthanc on existing installations
+install_orthanc_standalone() {
+  echo "## Installing Orthanc addon on existing installation..."
+  
+  # Check if Mercure is installed
+  if [ ! -d "$MERCURE_BASE" ]; then
+    echo "Error: Mercure not found at $MERCURE_BASE. Please install Mercure first."
+    exit 1
+  fi
+  
+  # Check if database configuration exists
+  if [ ! -f "$CONFIG_PATH/db.env" ]; then
+    echo "Error: Database configuration not found. Please run Mercure installation first."
+    exit 1
+  fi
+  
+  # Set installation variables
+  INSTALL_ORTHANC=true
+  OWNER=mercure
+  
+  # Install Orthanc
+  install_orthanc
+  
+  echo "Orthanc installation complete!"
+}
+
+# Check if this is a standalone Orthanc installation
+if [ $# -eq 1 ] && [ "$1" = "orthanc" ]; then
+  install_orthanc_standalone
+  exit 0
+fi
