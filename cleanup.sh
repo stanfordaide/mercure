@@ -185,34 +185,57 @@ if [ "$PURGE" = true ]; then
     sudo rm -rf /etc/mercure || true
     
     # Remove any Docker secrets that might have been created (only in swarm mode)
-    if sudo docker info >/dev/null 2>&1 && sudo docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null | grep -q "active" 2>/dev/null; then
-        echo "Removing Docker secrets..."
-        sudo docker secret ls --filter "name=orthanc" --format "{{.Name}}" 2>/dev/null | while read secret; do
-            echo "Removing secret: $secret"
-            sudo docker secret rm "$secret" || true
-        done
+    echo "Checking Docker secrets..."
+    if sudo docker info >/dev/null 2>&1; then
+        swarm_state=$(sudo docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null || echo "inactive")
+        if [ "$swarm_state" = "active" ]; then
+            echo "Removing Docker secrets..."
+            # Use timeout and better error handling
+            secrets=$(timeout 5s sudo docker secret ls --filter "name=orthanc" --format "{{.Name}}" 2>/dev/null || echo "")
+            if [ -n "$secrets" ]; then
+                echo "$secrets" | while read secret; do
+                    echo "Removing secret: $secret"
+                    sudo docker secret rm "$secret" 2>/dev/null || true
+                done
+            else
+                echo "No orthanc secrets found"
+            fi
+        else
+            echo "Docker swarm not active, skipping secrets cleanup"
+        fi
     else
-        echo "Docker swarm not active, skipping secrets cleanup"
+        echo "Docker not available, skipping secrets cleanup"
     fi
     
     # Remove mercure base directory
     echo "Removing mercure base directory..."
     
-    # Change to parent directory if we're currently in the mercure directory
-    if [ "$(pwd)" = "$MERCURE_BASE" ]; then
-        echo "Changing to parent directory to allow removal..."
-        cd "$(dirname "$MERCURE_BASE")"
-    fi
-    
-    # Force remove the directory and all contents
-    if [ -d "$MERCURE_BASE" ]; then
-        echo "Removing directory: $MERCURE_BASE"
-        sudo rm -rf "$MERCURE_BASE"/*
-        sudo rm -rf "$MERCURE_BASE"/.* 2>/dev/null || true  # Remove hidden files
-        sudo rmdir "$MERCURE_BASE" 2>/dev/null || true
-        echo "✓ Complete removal successful"
+    # Check if we're running from within the mercure directory
+    if [[ "$(pwd)" == "$MERCURE_BASE"* ]]; then
+        echo "Warning: Script is running from within mercure directory."
+        echo "The directory cannot be removed while the script is running from it."
+        echo "To complete the cleanup, please run this command after the script finishes:"
+        echo "  sudo rm -rf $MERCURE_BASE"
+        echo "Or restart the system to ensure all processes are stopped."
     else
-        echo "Directory $MERCURE_BASE not found or already removed"
+        # We're not in the directory, so we can try to remove it
+        if [ -d "$MERCURE_BASE" ]; then
+            echo "Removing directory: $MERCURE_BASE"
+            
+            # Try to remove all contents first
+            sudo find "$MERCURE_BASE" -mindepth 1 -delete 2>/dev/null || true
+            
+            # Then try to remove the directory itself
+            if sudo rmdir "$MERCURE_BASE" 2>/dev/null; then
+                echo "✓ Directory removed successfully"
+            else
+                echo "Warning: Could not remove directory. It may still be in use."
+                echo "You may need to restart the system or manually remove it later."
+                echo "Remaining directory: $MERCURE_BASE"
+            fi
+        else
+            echo "Directory $MERCURE_BASE not found or already removed"
+        fi
     fi
 fi
 
