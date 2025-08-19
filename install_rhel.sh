@@ -341,13 +341,14 @@ DO_OPERATION="install"
 INSTALL_ORTHANC=false
 DB_PERSISTENCE_PATH=""
 
-while getopts ":hydbnop" opt; do
+while getopts ":hydbnopu" opt; do
   case ${opt} in
     h )
       echo "Usage:"
       echo ""
       echo "    install_rhel.sh -h                Display this help message."
       echo "    install_rhel.sh [-y] [-dbn]       Install with docker-compose."
+      echo "    install_rhel.sh [-u]              Update an existing installation."
       echo "    install_rhel.sh orthanc           Install Orthanc addon on existing installation."
       echo ""
       echo "Options:"
@@ -357,6 +358,7 @@ while getopts ":hydbnop" opt; do
       echo "    -y                                Force installation without prompting."
       echo "    -o                                Install Orthanc integration."
       echo "    -p DB_PERSISTENCE_PATH            Specify a path for persistent storage."
+      echo "    -u                                Update an existing installation."
       echo ""      
       exit 0
       ;;
@@ -378,20 +380,6 @@ while getopts ":hydbnop" opt; do
     p )
       DB_PERSISTENCE_PATH=$OPTARG
       ;;
-    \? )
-      echo "Invalid Option: -$OPTARG" 1>&2
-      exit 1
-      ;;
-    : )
-      echo "Invalid Option: -$OPTARG requires an argument" 1>&2
-      exit 1
-      ;;
-  esac
-done
-shift $((OPTIND -1))
-
-while getopts ":u" opt; do
-  case ${opt} in
     u )
       DO_OPERATION="update"
       ;;
