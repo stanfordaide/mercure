@@ -341,6 +341,9 @@ DO_OPERATION="install"
 INSTALL_ORTHANC=false
 DB_PERSISTENCE_PATH=""
 
+# Temporarily disable set -u for argument parsing to avoid OPTARG issues
+set +u
+
 while getopts ":hydbnopu" opt; do
   case ${opt} in
     h )
@@ -393,6 +396,9 @@ while getopts ":hydbnopu" opt; do
       ;;
   esac
 done
+
+# Re-enable set -u for the rest of the script
+set -u
 
 if [ $DO_DEV_INSTALL == true ] && [ $DO_OPERATION == "update" ]; then 
   echo "Invalid option: cannot update a dev installation" 1>&2
