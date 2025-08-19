@@ -334,7 +334,7 @@ DB_PERSISTENCE_PATH=""
 # Temporarily disable set -u for argument parsing to avoid OPTARG issues
 set +u
 
-while getopts ":hydbnopu" opt; do
+while getopts "hydbnopu" opt; do
   case ${opt} in
     h )
       echo "Usage:"
@@ -389,6 +389,11 @@ done
 
 # Re-enable set -u for the rest of the script
 set -u
+
+# Debug output to see what was parsed
+echo "DEBUG: Arguments processed: $@"
+echo "DEBUG: DB_PERSISTENCE_PATH = '$DB_PERSISTENCE_PATH'"
+echo "DEBUG: OPTIND = $OPTIND"
 
 # Update paths based on DB_PERSISTENCE_PATH if it was set
 if [ -n "$DB_PERSISTENCE_PATH" ]; then
