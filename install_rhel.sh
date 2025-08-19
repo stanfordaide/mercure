@@ -341,7 +341,7 @@ DO_OPERATION="install"
 INSTALL_ORTHANC=false
 DB_PERSISTENCE_PATH=""
 
-while getopts ":hydbno" opt; do
+while getopts ":hydbnop" opt; do
   case ${opt} in
     h )
       echo "Usage:"
