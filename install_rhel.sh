@@ -334,7 +334,7 @@ DB_PERSISTENCE_PATH=""
 # Temporarily disable set -u for argument parsing to avoid OPTARG issues
 set +u
 
-while getopts ":hydbnopu" opt; do
+while getopts ":hydbnop:u" opt; do
   case ${opt} in
     h )
       echo "Usage:"
