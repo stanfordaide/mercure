@@ -371,7 +371,9 @@ while getopts "hydbnopu" opt; do
       INSTALL_ORTHANC=true
       ;;
     p )
+      echo "DEBUG: Processing -p option, OPTARG='$OPTARG'"
       DB_PERSISTENCE_PATH=$OPTARG
+      echo "DEBUG: Set DB_PERSISTENCE_PATH='$DB_PERSISTENCE_PATH'"
       ;;
     u )
       DO_OPERATION="update"
