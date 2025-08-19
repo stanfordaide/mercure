@@ -11,6 +11,7 @@ services:
       - TZ=America/Los_Angeles
     volumes:
       - ./lua_scripts:/etc/orthanc/lua
+      - orthanc-db:/var/lib/orthanc/db
     restart: always
     ports:
       - 8042:8042
@@ -34,3 +35,11 @@ networks:
   default:
     external: true
     name: mercure_default
+
+volumes:
+  orthanc-db:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/opt/mercure/addons/orthanc/orthanc-db'
