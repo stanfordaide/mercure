@@ -189,6 +189,8 @@ setup_docker () {
       sudo sed -i -e "s;device: '/opt/mercure/db';device: '$DB_PERSISTENCE_PATH/db';g" $MERCURE_BASE/docker-compose.yml
       sudo sed -i -e "s;device: '/opt/mercure/data';device: '$DB_PERSISTENCE_PATH/data';g" $MERCURE_BASE/docker-compose.yml
       sudo sed -i -e "s;device: '/opt/mercure/config';device: '$DB_PERSISTENCE_PATH/config';g" $MERCURE_BASE/docker-compose.yml
+      # Also update hardcoded file paths
+      sudo sed -i -e "s;/opt/mercure/config;$DB_PERSISTENCE_PATH/config;g" $MERCURE_BASE/docker-compose.yml
     fi
 
     sudo chown $OWNER:$OWNER "$MERCURE_BASE"/docker-compose.yml
