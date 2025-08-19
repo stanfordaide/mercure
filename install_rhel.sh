@@ -61,6 +61,9 @@ then
   DB_PWD=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1 || true)
 fi
 
+# Initialize DB_PERSISTENCE_PATH
+DB_PERSISTENCE_PATH=""
+
 MERCURE_BASE=/opt/mercure
 DATA_PATH=$MERCURE_BASE/data
 CONFIG_PATH=$MERCURE_BASE/config
