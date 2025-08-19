@@ -78,9 +78,6 @@ if [ -f "$CONFIG_PATH"/db.env ]; then
 fi
 
 echo "Installation folder:  $MERCURE_BASE"
-echo "Data folder:         $DATA_PATH"
-echo "Config folder:       $CONFIG_PATH"
-echo "Database folder:     $DB_PATH"
 echo "Source folder:       $MERCURE_SRC"
 echo ""
 
@@ -400,6 +397,12 @@ if [ -n "$DB_PERSISTENCE_PATH" ]; then
   DATA_PATH=$DB_PERSISTENCE_PATH/data
   CONFIG_PATH=$DB_PERSISTENCE_PATH/config
   echo "Updated paths:"
+  echo "  Data folder:     $DATA_PATH"
+  echo "  Config folder:   $CONFIG_PATH"
+  echo "  Database folder: $DB_PATH"
+  echo ""
+else
+  echo "Using default paths:"
   echo "  Data folder:     $DATA_PATH"
   echo "  Config folder:   $CONFIG_PATH"
   echo "  Database folder: $DB_PATH"
