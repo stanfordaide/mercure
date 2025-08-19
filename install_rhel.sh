@@ -396,7 +396,11 @@ while getopts ":u" opt; do
       DO_OPERATION="update"
       ;;
     \? )
-      echo "Invalid Option: -$OPTARG" 1>&2
+      echo "Invalid Option: -${OPTARG:-?}" 1>&2
+      exit 1
+      ;;
+    : )
+      echo "Invalid Option: -${OPTARG:-?} requires an argument" 1>&2
       exit 1
       ;;
   esac
