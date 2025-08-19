@@ -77,13 +77,6 @@ if [ -f "$CONFIG_PATH"/db.env ]; then
   DB_PWD=$POSTGRES_PASSWORD
 fi
 
-if [ -n "$DB_PERSISTENCE_PATH" ]; then
-  echo "DB_PERSISTENCE_PATH is set to $DB_PERSISTENCE_PATH. Mercure data will be stored there."
-  DB_PATH=$DB_PERSISTENCE_PATH/db
-  DATA_PATH=$DB_PERSISTENCE_PATH/data
-  CONFIG_PATH=$DB_PERSISTENCE_PATH/config
-fi
-
 echo "Installation folder:  $MERCURE_BASE"
 echo "Data folder:         $DATA_PATH"
 echo "Config folder:       $CONFIG_PATH"
@@ -399,6 +392,19 @@ done
 
 # Re-enable set -u for the rest of the script
 set -u
+
+# Update paths based on DB_PERSISTENCE_PATH if it was set
+if [ -n "$DB_PERSISTENCE_PATH" ]; then
+  echo "DB_PERSISTENCE_PATH is set to $DB_PERSISTENCE_PATH. Mercure data will be stored there."
+  DB_PATH=$DB_PERSISTENCE_PATH/db
+  DATA_PATH=$DB_PERSISTENCE_PATH/data
+  CONFIG_PATH=$DB_PERSISTENCE_PATH/config
+  echo "Updated paths:"
+  echo "  Data folder:     $DATA_PATH"
+  echo "  Config folder:   $CONFIG_PATH"
+  echo "  Database folder: $DB_PATH"
+  echo ""
+fi
 
 if [ $DO_DEV_INSTALL == true ] && [ $DO_OPERATION == "update" ]; then 
   echo "Invalid option: cannot update a dev installation" 1>&2
