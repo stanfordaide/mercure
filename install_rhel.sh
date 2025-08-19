@@ -183,6 +183,14 @@ setup_docker () {
     else
       sudo sed -i "s/\${IMAGE_TAG}/$IMAGE_TAG/g" $MERCURE_BASE/docker-compose.yml
     fi
+    
+    if [ -n "$DB_PERSISTENCE_PATH" ]; then
+      echo "## Setting custom persistence path: $DB_PERSISTENCE_PATH"
+      sudo sed -i -e "s;device: '/opt/mercure/db';device: '$DB_PERSISTENCE_PATH/db';g" $MERCURE_BASE/docker-compose.yml
+      sudo sed -i -e "s;device: '/opt/mercure/data';device: '$DB_PERSISTENCE_PATH/data';g" $MERCURE_BASE/docker-compose.yml
+      sudo sed -i -e "s;device: '/opt/mercure/config';device: '$DB_PERSISTENCE_PATH/config';g" $MERCURE_BASE/docker-compose.yml
+    fi
+
     sudo chown $OWNER:$OWNER "$MERCURE_BASE"/docker-compose.yml
   fi
 }
@@ -321,6 +329,7 @@ DOCKER_BUILD=false
 NO_CACHE=false
 DO_OPERATION="install"
 INSTALL_ORTHANC=false
+DB_PERSISTENCE_PATH=""
 
 while getopts ":hydbno" opt; do
   case ${opt} in
@@ -337,6 +346,7 @@ while getopts ":hydbno" opt; do
       echo "    -n                                Build containers with --no-cache."
       echo "    -y                                Force installation without prompting."
       echo "    -o                                Install Orthanc integration."
+      echo "    -p DB_PERSISTENCE_PATH            Specify a path for persistent storage."
       echo ""      
       exit 0
       ;;
@@ -354,6 +364,9 @@ while getopts ":hydbno" opt; do
       ;;
     o )
       INSTALL_ORTHANC=true
+      ;;
+    p )
+      DB_PERSISTENCE_PATH=$OPTARG
       ;;
     \? )
       echo "Invalid Option: -$OPTARG" 1>&2
@@ -413,6 +426,11 @@ install_orthanc () {
     echo "## Copying Orthanc configuration files..."
     sudo cp -r "$MERCURE_SRC/addons/orthanc"/* "$MERCURE_BASE/addons/orthanc/"
     
+    if [ -n "$DB_PERSISTENCE_PATH" ]; then
+      echo "## Setting custom Orthanc storage path: $DB_PERSISTENCE_PATH/orthanc-db"
+      sudo sed -i -e "s;\"StorageDirectory\" : \"/var/lib/orthanc/db\";\"StorageDirectory\" : \"$DB_PERSISTENCE_PATH/orthanc-db\";g" "$MERCURE_BASE/addons/orthanc/orthanc.json"
+    fi
+
     # Update Orthanc configuration with generated database password
     echo "## Configuring Orthanc with database credentials..."
     if [ -f "$CONFIG_PATH/db.env" ]; then
