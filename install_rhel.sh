@@ -133,9 +133,23 @@ fix_nfs_permissions () {
     
     # Check if this is an NFS mount
     if mount | grep -q "$persistence_path"; then
-      echo "## Detected NFS mount, fixing permissions for Orthanc storage..."
+      echo "## Detected NFS mount, fixing permissions for Docker containers..."
       
-      # Fix Orthanc storage directory permissions (PostgreSQL stays local)
+      # Create postgres user locally if it doesn't exist (PostgreSQL runs as UID 999)
+      if ! id -u postgres &>/dev/null; then
+        echo "## Creating local postgres user for PostgreSQL container..."
+        sudo useradd -u 999 -g 999 postgres 2>/dev/null || true
+      fi
+      
+      # Fix PostgreSQL directory permissions
+      if [ -d "$persistence_path/postgres-db" ]; then
+        echo "## Fixing PostgreSQL directory permissions..."
+        sudo chown -R 999:999 "$persistence_path/postgres-db"
+        sudo chmod -R 700 "$persistence_path/postgres-db"
+        echo "✅ PostgreSQL directory permissions fixed"
+      fi
+      
+      # Fix Orthanc storage directory permissions
       if [ -d "$persistence_path/orthanc-storage" ]; then
         echo "## Fixing Orthanc storage directory permissions..."
         sudo chown -R $OWNER:$OWNER "$persistence_path/orthanc-storage"
@@ -143,13 +157,13 @@ fix_nfs_permissions () {
         echo "✅ Orthanc storage directory permissions fixed"
       fi
       
-      # Test Orthanc storage write access
-      if sudo -u $OWNER touch "$persistence_path/orthanc-storage/test.txt" 2>/dev/null; then
-        sudo rm -f "$persistence_path/orthanc-storage/test.txt"
-        echo "✅ Orthanc storage write access verified"
+      # Test PostgreSQL write access
+      if sudo -u postgres touch "$persistence_path/postgres-db/test.txt" 2>/dev/null; then
+        sudo rm -f "$persistence_path/postgres-db/test.txt"
+        echo "✅ PostgreSQL user can write to persistence directory"
       else
-        echo "⚠️  Warning: Cannot write to Orthanc storage directory"
-        echo "   This may cause Orthanc container startup issues"
+        echo "⚠️  Warning: PostgreSQL user cannot write to persistence directory"
+        echo "   This may cause container startup issues"
       fi
       
     else
@@ -437,17 +451,18 @@ echo "DEBUG: OPTIND = $OPTIND"
 
 # Update paths based on DB_PERSISTENCE_PATH if it was set
 if [ -n "$DB_PERSISTENCE_PATH" ]; then
-  echo "DB_PERSISTENCE_PATH is set to $DB_PERSISTENCE_PATH. Orthanc storage will be persisted there."
-  # Keep PostgreSQL local for better performance
-  # DB_PATH stays at default /opt/mercure/db
+  echo "DB_PERSISTENCE_PATH is set to $DB_PERSISTENCE_PATH. PostgreSQL data for Mercure and Orthanc will be stored there."
+  DB_PATH=$DB_PERSISTENCE_PATH/postgres-db
+  # Keep DATA_PATH and CONFIG_PATH at default locations
   echo "Updated paths:"
   echo "  Data folder:     $DATA_PATH (default location)"
   echo "  Config folder:   $CONFIG_PATH (default location)"
-  echo "  Database folder: $DB_PATH (local storage - better performance)"
-  echo "  Orthanc storage: $DB_PERSISTENCE_PATH/orthanc-storage (custom persistence)"
+  echo "  Mercure DB:      $DB_PATH (custom persistence)"
+  echo "  Orthanc storage:      $DB_PERSISTENCE_PATH/orthanc-storage (custom persistence)"
+  # echo "  Orthanc Storage: $DB_PERSISTENCE_PATH/orthanc-storage (custom persistence)"
   echo ""
   
-  # Fix NFS permissions if this is an NFS mount (only for Orthanc storage)
+  # Fix NFS permissions if this is an NFS mount
   fix_nfs_permissions "$DB_PERSISTENCE_PATH"
 else
   echo "Using default paths:"
@@ -492,14 +507,13 @@ install_orthanc () {
     sudo cp -r "$MERCURE_SRC/addons/orthanc"/* "$MERCURE_BASE/addons/orthanc/"
     
     if [ -n "$DB_PERSISTENCE_PATH" ]; then
-      echo "## Setting custom Orthanc storage persistence path: $DB_PERSISTENCE_PATH"
-      # PostgreSQL stays local for better performance
-      # Only Orthanc storage uses custom persistence path
-      
-      # Update Orthanc storage volume path
+      echo "## Setting custom Orthanc persistence paths:"
+      echo "  Storage:  $DB_PERSISTENCE_PATH/orthanc-storage"
+            
+      # Update storage volume path
       sudo sed -i -e "s;device: '/opt/mercure/addons/orthanc/orthanc-storage';device: '$DB_PERSISTENCE_PATH/orthanc-storage';g" "$MERCURE_BASE/addons/orthanc/docker-compose.yml"
       
-      # Create Orthanc storage directory
+      # Create directory
       create_folder "$DB_PERSISTENCE_PATH/orthanc-storage"
     fi
 
