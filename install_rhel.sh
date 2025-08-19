@@ -185,12 +185,9 @@ setup_docker () {
     fi
     
     if [ -n "$DB_PERSISTENCE_PATH" ]; then
-      echo "## Setting custom persistence path: $DB_PERSISTENCE_PATH"
-      sudo sed -i -e "s;device: '/opt/mercure/db';device: '$DB_PERSISTENCE_PATH/db';g" $MERCURE_BASE/docker-compose.yml
-      sudo sed -i -e "s;device: '/opt/mercure/data';device: '$DB_PERSISTENCE_PATH/data';g" $MERCURE_BASE/docker-compose.yml
-      sudo sed -i -e "s;device: '/opt/mercure/config';device: '$DB_PERSISTENCE_PATH/config';g" $MERCURE_BASE/docker-compose.yml
-      # Also update hardcoded file paths
-      sudo sed -i -e "s;/opt/mercure/config;$DB_PERSISTENCE_PATH/config;g" $MERCURE_BASE/docker-compose.yml
+      echo "## Setting custom database persistence path: $DB_PERSISTENCE_PATH"
+      sudo sed -i -e "s;device: '/opt/mercure/db';device: '$DB_PERSISTENCE_PATH/mercure-db';g" $MERCURE_BASE/docker-compose.yml
+      # Keep data and config volumes at default locations
     fi
 
     sudo chown $OWNER:$OWNER "$MERCURE_BASE"/docker-compose.yml
@@ -401,14 +398,15 @@ echo "DEBUG: OPTIND = $OPTIND"
 
 # Update paths based on DB_PERSISTENCE_PATH if it was set
 if [ -n "$DB_PERSISTENCE_PATH" ]; then
-  echo "DB_PERSISTENCE_PATH is set to $DB_PERSISTENCE_PATH. Mercure data will be stored there."
-  DB_PATH=$DB_PERSISTENCE_PATH/db
-  DATA_PATH=$DB_PERSISTENCE_PATH/data
-  CONFIG_PATH=$DB_PERSISTENCE_PATH/config
+  echo "DB_PERSISTENCE_PATH is set to $DB_PERSISTENCE_PATH. PostgreSQL and Orthanc data will be stored there."
+  DB_PATH=$DB_PERSISTENCE_PATH/mercure-db
+  # Keep DATA_PATH and CONFIG_PATH at default locations
   echo "Updated paths:"
-  echo "  Data folder:     $DATA_PATH"
-  echo "  Config folder:   $CONFIG_PATH"
-  echo "  Database folder: $DB_PATH"
+  echo "  Data folder:     $DATA_PATH (default location)"
+  echo "  Config folder:   $CONFIG_PATH (default location)"
+  echo "  Mercure DB:      $DB_PATH (custom persistence)"
+  echo "  Orthanc DB:      $DB_PERSISTENCE_PATH/orthanc-db (custom persistence)"
+  echo "  Orthanc Storage: $DB_PERSISTENCE_PATH/orthanc-storage (custom persistence)"
   echo ""
 else
   echo "Using default paths:"
@@ -453,9 +451,19 @@ install_orthanc () {
     sudo cp -r "$MERCURE_SRC/addons/orthanc"/* "$MERCURE_BASE/addons/orthanc/"
     
     if [ -n "$DB_PERSISTENCE_PATH" ]; then
-      echo "## Setting custom Orthanc persistence path: $DB_PERSISTENCE_PATH/orthanc-db"
+      echo "## Setting custom Orthanc persistence paths:"
+      echo "  Database: $DB_PERSISTENCE_PATH/orthanc-db"
+      echo "  Storage:  $DB_PERSISTENCE_PATH/orthanc-storage"
+      
+      # Update database volume path
       sudo sed -i -e "s;device: '/opt/mercure/addons/orthanc/orthanc-db';device: '$DB_PERSISTENCE_PATH/orthanc-db';g" "$MERCURE_BASE/addons/orthanc/docker-compose.yml"
+      
+      # Update storage volume path
+      sudo sed -i -e "s;device: '/opt/mercure/addons/orthanc/orthanc-storage';device: '$DB_PERSISTENCE_PATH/orthanc-storage';g" "$MERCURE_BASE/addons/orthanc/docker-compose.yml"
+      
+      # Create both directories
       create_folder "$DB_PERSISTENCE_PATH/orthanc-db"
+      create_folder "$DB_PERSISTENCE_PATH/orthanc-storage"
     fi
 
     # Update Orthanc configuration with generated database password

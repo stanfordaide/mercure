@@ -12,6 +12,7 @@ services:
     volumes:
       - ./lua_scripts:/etc/orthanc/lua
       - orthanc-db:/var/lib/orthanc/db
+      - orthanc-storage:/var/lib/orthanc/storage
     restart: always
     ports:
       - 8042:8042
@@ -43,3 +44,9 @@ volumes:
       type: 'none'
       o: 'bind'
       device: '/opt/mercure/addons/orthanc/orthanc-db'
+  orthanc-storage:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/opt/mercure/addons/orthanc/orthanc-storage'
