@@ -117,6 +117,59 @@ create_folders () {
 
   # Create addons directory
   create_folder "$MERCURE_BASE/addons"
+  
+  # Fix NFS permissions if using custom persistence path
+  if [ -n "$DB_PERSISTENCE_PATH" ]; then
+    fix_nfs_permissions "$DB_PERSISTENCE_PATH"
+  fi
+}
+
+# Function to fix NFS permissions for Docker containers
+fix_nfs_permissions () {
+  local persistence_path="$1"
+  
+  if [ -n "$persistence_path" ]; then
+    echo "## Checking and fixing NFS permissions for persistence path: $persistence_path"
+    
+    # Check if this is an NFS mount
+    if mount | grep -q "$persistence_path"; then
+      echo "## Detected NFS mount, fixing permissions for Docker containers..."
+      
+      # Create postgres user locally if it doesn't exist (PostgreSQL runs as UID 999)
+      if ! id -u postgres &>/dev/null; then
+        echo "## Creating local postgres user for PostgreSQL container..."
+        sudo useradd -u 999 -g 999 postgres 2>/dev/null || true
+      fi
+      
+      # Fix PostgreSQL directory permissions
+      if [ -d "$persistence_path/postgres-db" ]; then
+        echo "## Fixing PostgreSQL directory permissions..."
+        sudo chown -R 999:999 "$persistence_path/postgres-db"
+        sudo chmod -R 700 "$persistence_path/postgres-db"
+        echo "✅ PostgreSQL directory permissions fixed"
+      fi
+      
+      # Fix Orthanc storage directory permissions
+      if [ -d "$persistence_path/orthanc-storage" ]; then
+        echo "## Fixing Orthanc storage directory permissions..."
+        sudo chown -R $OWNER:$OWNER "$persistence_path/orthanc-storage"
+        sudo chmod -R 755 "$persistence_path/orthanc-storage"
+        echo "✅ Orthanc storage directory permissions fixed"
+      fi
+      
+      # Test PostgreSQL write access
+      if sudo -u postgres touch "$persistence_path/postgres-db/test.txt" 2>/dev/null; then
+        sudo rm -f "$persistence_path/postgres-db/test.txt"
+        echo "✅ PostgreSQL user can write to persistence directory"
+      else
+        echo "⚠️  Warning: PostgreSQL user cannot write to persistence directory"
+        echo "   This may cause container startup issues"
+      fi
+      
+    else
+      echo "## Not an NFS mount, using standard permissions"
+    fi
+  fi
 }
 
 install_scripts () {
@@ -408,6 +461,9 @@ if [ -n "$DB_PERSISTENCE_PATH" ]; then
   echo "  Orthanc storage:      $DB_PERSISTENCE_PATH/orthanc-storage (custom persistence)"
   # echo "  Orthanc Storage: $DB_PERSISTENCE_PATH/orthanc-storage (custom persistence)"
   echo ""
+  
+  # Fix NFS permissions if this is an NFS mount
+  fix_nfs_permissions "$DB_PERSISTENCE_PATH"
 else
   echo "Using default paths:"
   echo "  Data folder:     $DATA_PATH"
