@@ -1,48 +1,11 @@
--- Helper function to check if study has already been processed by Stanford AIDE
-function hasStanfordAIDEOutput(instances)
+-- Helper function to check if any instance in the study has "AIDEOUT" in StudyDescription
+function hasAIDEOUTInDescription(instances)
     for _, instance in pairs(instances) do
         local instanceTags = ParseJson(RestApiGet('/instances/' .. instance['ID'] .. '/tags?simplify'))
         if instanceTags then
-            -- Primary check: Stanford AIDE manufacturer
-            local manufacturer = instanceTags['Manufacturer'] or ''
-            if string.upper(manufacturer) == 'STANFORDAIDE' then
-                print('   Found Stanford AIDE output (Manufacturer: ' .. manufacturer .. ')')
-                return true
-            end
-            
-            -- Secondary check: Structured Report modality (AI outputs)
-            local modality = instanceTags['Modality'] or ''
-            if modality == 'SR' then
-                print('   Found Structured Report output (Modality: SR)')
-                return true
-            end
-            
-            -- Tertiary check: AI-specific series descriptions
-            local seriesDescription = instanceTags['SeriesDescription'] or ''
-            local upperSeriesDesc = string.upper(seriesDescription)
-            if string.find(upperSeriesDesc, 'AI MEASUREMENTS') or 
-               string.find(upperSeriesDesc, 'QA VISUALIZATION') then
-                print('   Found AI-specific series description: ' .. seriesDescription)
-                return true
-            end
-            
-            -- Quaternary check: Software version pattern
-            local softwareVersions = instanceTags['SoftwareVersions'] or ''
-            if string.find(string.upper(softwareVersions), 'PEDIATRIC_LEG_LENGTH_V') then
-                print('   Found AI software version: ' .. softwareVersions)
-                return true
-            end
-            
-            -- Final check: Institution/Station/Department combination indicating AI processing
-            local institutionName = instanceTags['InstitutionName'] or ''
-            local department = instanceTags['InstitutionalDepartmentName'] or ''
-            local stationName = instanceTags['StationName'] or ''
-            
-            if string.upper(institutionName) == 'SOM' and 
-               string.upper(department) == 'RADIOLOGY' and 
-               string.upper(stationName) == 'LPCH' and
-               string.upper(manufacturer) == 'STANFORDAIDE' then
-                print('   Found Stanford AIDE institutional pattern')
+            local studyDescription = instanceTags['StudyDescription'] or ''
+            if string.find(string.upper(studyDescription), 'AIDEOUT') then
+                print('   Found AIDEOUT in StudyDescription: ' .. studyDescription)
                 return true
             end
         end
@@ -68,9 +31,9 @@ function OnStableStudy(studyId, tags, metadata, origin)
         -- Get all instances in the study
         local instances = ParseJson(RestApiGet('/studies/' .. studyId .. '/instances'))
         
-        -- Check if already processed by Stanford AIDE
-        if hasStanfordAIDEOutput(instances) then
-            print('   Study already processed by Stanford AIDE, skipping')
+        -- Check if already processed
+        if hasAIDEOUTInDescription(instances) then
+            print('   Study already has AIDEOUT in description, skipping processing')
             return
         end
 
