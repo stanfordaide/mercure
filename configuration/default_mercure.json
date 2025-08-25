@@ -90,19 +90,16 @@
             "environment": "",
             "docker_arguments": "",
             "settings": {
-                "mode": "ensemble",
-                "model": "resnet101",
-                "ensemble_models": [
-                    "resnet101",
-                    "resnext101_32x8d",
-                    "vit_l_16"
+                "models": [
+                    "resnet101", 
+                    "vit_l_16", 
+                    "resnext101_32x8d"
                 ],
-                "conf_threshold": 0.1,
-                "enable_disagreement": true,
-                "detection_weight": 0.5,
-                "outlier_weight": 0.35,
-                "localization_weight": 0.15,
-                "series_offset": 1000
+                "series_offset": 1000,
+                "femur_threshold": 0.2,
+                "tibia_threshold": 0.2,
+                "total_threshold": 1.0,
+                "confidence_threshold": 0.0
             },
             "contact": "arogya@stanford.edu",
             "comment": "Pediatric Leg Length Module",
