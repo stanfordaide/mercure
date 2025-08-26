@@ -192,8 +192,15 @@ install_configuration () {
     cp "$MERCURE_SRC"/configuration/timezone.env "$CONFIG_PATH"/timezone.env
     echo "POSTGRES_PASSWORD=$DB_PWD" > "$CONFIG_PATH"/db.env
 
-    sed -i -e "s/mercure:ChangePasswordHere@localhost/mercure:$DB_PWD@db/" "$CONFIG_PATH"/bookkeeper.env
-    sed -i -e "s/0.0.0.0:8080/bookkeeper:8080/" "$CONFIG_PATH"/mercure.json
+    # Update Bookkeeper password depending on install mode (docker vs non-docker)
+    if [ -f "$MERCURE_BASE/docker-compose.yml" ]; then
+      # Docker-based install
+      sed -i -e "s/mercure:ChangePasswordHere@localhost/mercure:$DB_PWD@db/" "$CONFIG_PATH"/bookkeeper.env
+      sed -i -e "s/0.0.0.0:8080/bookkeeper:8080/" "$CONFIG_PATH"/mercure.json
+    else
+      # Systemd/non-docker install
+      sed -i -e "s/mercure:ChangePasswordHere@localhost/mercure:$DB_PWD@localhost/" "$CONFIG_PATH"/bookkeeper.env
+    fi
     
     sed -i -e "s/BOOKKEEPER_TOKEN_PLACEHOLDER/$BOOKKEEPER_SECRET/" "$CONFIG_PATH"/mercure.json
     sed -i -e "s/PutSomethingRandomHere/$SECRET/" "$CONFIG_PATH"/webgui.env
