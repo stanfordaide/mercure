@@ -41,7 +41,7 @@ echo ""
 OWNER=$USER
 if [ $OWNER = "root" ]
 then
-  OWNER=$(logname)
+  OWNER=$(logname 2>/dev/null || echo "root")
   echo "Running as root, but setting $OWNER as owner."
 fi
 
@@ -241,57 +241,45 @@ docker_update () {
   start_docker
 }
 
+# Initialize default values
 FORCE_INSTALL="n"
+DO_DEV_INSTALL=false
+DOCKER_BUILD=false
+DO_OPERATION="install"
+INSTALL_METABASE=false
 
-while getopts ":hy" opt; do
+# Parse all options in one go
+while getopts ":hydbum" opt; do
   case ${opt} in
     h )
       echo "Usage:"
       echo ""
       echo "    install.sh -h                      Display this help message."
-      echo "    install.sh [-y] docker  [-dmu]     Install with docker-compose."
+      echo "    install.sh [-y] [-dbum]            Install with docker-compose."
       echo ""
       echo "Options:   "
+      echo "                      -y               Force install (no prompts)."
       echo "                      -d               Development mode."
-      echo "                      -m               Install Metabase for reporting."
-      echo "                      -u               Update installation."
       echo "                      -b               Build containers."
+      echo "                      -u               Update installation."
+      echo "                      -m               Install Metabase for reporting."
       echo ""      
       exit 0
       ;;
     y )
       FORCE_INSTALL="y"
       ;;
-    \? )
-      echo "Invalid Option: -$OPTARG" 1>&2
-      exit 1
-      ;;
-    : )
-      echo "Invalid Option: -$OPTARG requires an argument" 1>&2
-      exit 1
-      ;;
-  esac
-done
-shift $((OPTIND -1))
-
-DO_DEV_INSTALL=false
-DOCKER_BUILD=false
-DO_OPERATION="install"
-INSTALL_METABASE=false
-
-while getopts ":dbum" opt; do
-  case ${opt} in
-    m )
-      INSTALL_METABASE=true
-      ;;
-    u )
-      DO_OPERATION="update"
-      ;;
     d )
       DO_DEV_INSTALL=true
       ;;
     b )
       DOCKER_BUILD=true
+      ;;
+    u )
+      DO_OPERATION="update"
+      ;;
+    m )
+      INSTALL_METABASE=true
       ;;
     \? )
       echo "Invalid Option: -$OPTARG" 1>&2
