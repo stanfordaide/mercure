@@ -153,7 +153,7 @@ install_docker () {
     echo "## Installing Docker-Compose..."
     sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     sudo chmod +x /usr/local/bin/docker-compose
-    sudo docker-compose --version
+    sudo docker compose --version
   fi
 }
 
@@ -197,7 +197,7 @@ build_docker () {
 start_docker () {
   echo "## Starting docker compose..."  
   pushd $MERCURE_BASE
-  sudo docker-compose up -d
+  sudo docker compose up -d
   popd
 }
 
@@ -235,7 +235,7 @@ docker_update () {
     fi
   fi
   pushd $MERCURE_BASE
-  sudo docker-compose down || true
+  sudo docker compose down || true
   popd
   setup_docker true
   start_docker
