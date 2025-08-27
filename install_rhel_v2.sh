@@ -191,7 +191,7 @@ setup_docker_dev () {
 
 build_docker () {
   echo "## Building mercure docker containers..."  
-  sudo $MERCURE_SRC/build-docker.sh -y
+  sudo $MERCURE_SRC/docker-build.sh -y
 }
 
 start_docker () {
