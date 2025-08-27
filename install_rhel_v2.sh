@@ -121,6 +121,7 @@ install_configuration () {
     cp "$MERCURE_SRC"/configuration/default_mercure.json "$CONFIG_PATH"/mercure.json
     cp "$MERCURE_SRC"/configuration/default_services.json "$CONFIG_PATH"/services.json
     cp "$MERCURE_SRC"/configuration/default_webgui.env "$CONFIG_PATH"/webgui.env
+    cp "$MERCURE_SRC"/configuration/timezone.env "$CONFIG_PATH"/timezone.env
     echo "POSTGRES_PASSWORD=$DB_PWD" > "$CONFIG_PATH"/db.env
 
     sed -i -e "s/mercure:ChangePasswordHere@localhost/mercure:$DB_PWD@db/" "$CONFIG_PATH"/bookkeeper.env
