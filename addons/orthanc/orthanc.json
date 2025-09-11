@@ -18,19 +18,19 @@
 
     // PostgreSQL Database Configuration
     "PostgreSQL" : {
-      "EnableIndex" : true,                    // Use PostgreSQL for DICOM index
-      "EnableStorage" : false,                 // Keep file storage local (recommended)
-      "Host" : "mercure_db_1",                // Database container name
-      "Port" : 5432,                          // PostgreSQL port
-      "Database" : "orthanc",                 // Database name (create this separately)
-      "Username" : "mercure",                 // Use existing Mercure DB user
-      "Password" : "ChangePasswordHere",      // Get this from /opt/mercure/config/db.env
-      "EnableSsl" : false,                    // SSL not needed for internal container network
-      "MaximumConnectionRetries" : 10,        // Connection retry attempts
-      "ConnectionRetryInterval" : 5,          // Seconds between retries
-      "PrepareIndex" : true,                  // Auto-create database schema
-      "Lock" : true                           // Use database-level locking
-    },
+      "EnableIndex" : true,                     // Store DICOM metadata in PostgreSQL for faster queries
+      "EnableStorage" : false,                  // Keep DICOM files on disk (recommended for performance)
+      "Host" : "orthanc-db",                   // PostgreSQL container service name
+      "Port" : 5432,                          // Internal container port
+      "Database" : "orthanc",                  // Database name created at startup
+      "Username" : "orthanc",                  // Database user with full access
+      "Password" : "orthanc_secure_password_2024",  // Database password (change in production)
+      "EnableSsl" : false,                     // SSL disabled for internal network
+      "MaximumConnectionRetries" : 10,         // Retry attempts during startup
+      "ConnectionRetryInterval" : 5,           // Seconds between connection attempts
+      "PrepareIndex" : true,                   // Auto-create database schema on first run
+      "Lock" : true                           // Enable database locking for data integrity
+    }
 
 
     // HTTP server settings

@@ -1,9 +1,9 @@
-version: '3.1'  # Secrets are only available since this version of Docker Compose
+version: '3.1'
 
 services:
   orthanc:
     image: jodogne/orthanc-python
-    command: /run/secrets/  # Path to the configuration files (stored as secrets)
+    command: /run/secrets/
     secrets:
       - orthanc.json
     environment:
@@ -16,6 +16,21 @@ services:
     ports:
       - 8042:8042
       - 4242:4242
+    depends_on:
+      - orthanc-db
+
+  orthanc-db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=orthanc
+      - POSTGRES_USER=orthanc
+      - POSTGRES_PASSWORD=orthanc_secure_password_2024
+      - TZ=America/Los_Angeles
+    volumes:
+      - orthanc-db-data:/var/lib/postgresql/data
+    restart: always
+    ports:
+      - "5433:5432"  # External port 5433 to avoid conflicts
 
   ohif:
     image: mercureimaging/ohif
@@ -43,3 +58,10 @@ volumes:
       type: 'none'
       o: 'bind'
       device: '/opt/mercure/addons/orthanc/orthanc-storage'
+  
+  orthanc-db-data:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/opt/mercure/addons/orthanc/postgres-data'
