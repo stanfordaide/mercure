@@ -135,6 +135,15 @@ install_configuration () {
   fi
 }
 
+install_management_script () {
+  if [ -f "$MERCURE_SRC/mercure-manager.sh" ]; then
+    echo "## Copying mercure-manager.sh to install directory..."
+    sudo cp "$MERCURE_SRC/mercure-manager.sh" "$MERCURE_BASE/mercure-manager.sh"
+    sudo chown $OWNER:$OWNER "$MERCURE_BASE/mercure-manager.sh"
+    sudo chmod +x "$MERCURE_BASE/mercure-manager.sh"
+  fi
+}
+
 install_docker () {
   if [ ! -x "$(command -v docker)" ]; then 
     echo "## Installing Docker..."
@@ -207,6 +216,7 @@ docker_install () {
   create_user
   create_folders
   install_configuration
+  install_management_script
   install_docker
   if [ $DOCKER_BUILD = true ]; then
     build_docker
