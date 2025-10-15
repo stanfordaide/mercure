@@ -64,11 +64,16 @@ if [ -f "$CONFIG_PATH"/db.env ]; then
   DB_PWD=$POSTGRES_PASSWORD
 fi
 
+echo "============================================"
 echo "Installation folder:  $MERCURE_BASE"
 echo "Data folder:          $DATA_PATH"
 echo "Config folder:        $CONFIG_PATH"
 echo "Database folder:      $DB_PATH"
 echo "Source folder:        $MERCURE_SRC"
+echo "============================================"
+echo ""
+echo "NOTE: This installation will copy files from the source"
+echo "      folder to the installation folder."
 echo ""
 
 create_user () {
@@ -312,7 +317,9 @@ install_docker () {
 setup_docker () {
   local overwrite=${1:-false}
   if [ "$overwrite" = true ] || [ ! -f "$MERCURE_BASE"/docker-compose.yml ]; then
-    echo "## Copying docker-compose.yml..."
+    echo "## Copying docker-compose.yml from repository..."
+    echo "   Source: $MERCURE_SRC/docker/docker-compose.yml"
+    echo "   Target: $MERCURE_BASE/docker-compose.yml"
     sudo cp $MERCURE_SRC/docker/docker-compose.yml $MERCURE_BASE
     sudo sed -i -e "s/\\\${DOCKER_GID}/$(getent group docker | cut -d: -f3)/g" $MERCURE_BASE/docker-compose.yml
     sudo sed -i -e "s/\\\${UID}/$(getent passwd mercure | cut -d: -f3)/g" $MERCURE_BASE/docker-compose.yml

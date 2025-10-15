@@ -3,8 +3,15 @@
 
 set -euo pipefail
 
+# Installation and repository paths
 MERCURE_BASE="/opt/mercure"
+MERCURE_REPO="/opt/projects/mercure"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Auto-detect if we're running from the repo
+if [ -f "$SCRIPT_DIR/app/VERSION" ] && [ -f "$SCRIPT_DIR/install.sh" ]; then
+    MERCURE_REPO="$SCRIPT_DIR"
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -113,21 +120,60 @@ show_logs() {
     fi
 }
 
-update_mercure() {
-    info "Updating mercure installation..."
+sync_from_repo() {
+    info "Syncing changes from repository to installation..."
     
-    # Check if we're in the source directory or need to find it
-    if [ -f "./install.sh" ] && [ -f "./app/VERSION" ]; then
-        SOURCE_DIR="$(pwd)"
-    else
-        read -p "Enter path to mercure source directory: " SOURCE_DIR
-        if [ ! -f "$SOURCE_DIR/install.sh" ] || [ ! -f "$SOURCE_DIR/app/VERSION" ]; then
-            error "Invalid source directory. install.sh and app/VERSION not found."
-        fi
+    # Check if repo directory exists
+    if [ ! -d "$MERCURE_REPO" ]; then
+        error "Repository directory not found at $MERCURE_REPO"
     fi
     
-    cd "$SOURCE_DIR"
-    ./install.sh -y docker -u
+    if [ ! -f "$MERCURE_REPO/install.sh" ] || [ ! -f "$MERCURE_REPO/app/VERSION" ]; then
+        error "Invalid repository directory at $MERCURE_REPO"
+    fi
+    
+    info "Repository: $MERCURE_REPO"
+    info "Installation: $MERCURE_BASE"
+    
+    # Stop services
+    cd "$MERCURE_BASE"
+    docker-compose down
+    
+    # Sync docker files and compose configuration
+    info "Syncing docker files..."
+    rsync -av --delete "$MERCURE_REPO/docker/" "$MERCURE_BASE/docker/"
+    cp "$MERCURE_REPO/docker-compose.yml" "$MERCURE_BASE/" 2>/dev/null || true
+    
+    # Rebuild and restart
+    info "Rebuilding services..."
+    docker-compose build
+    docker-compose up -d
+    
+    success "Sync completed and services restarted"
+    show_status
+}
+
+update_mercure() {
+    info "Updating mercure installation from repository..."
+    
+    # Check if repo directory exists
+    if [ ! -d "$MERCURE_REPO" ]; then
+        error "Repository directory not found at $MERCURE_REPO"
+    fi
+    
+    if [ ! -f "$MERCURE_REPO/install.sh" ] || [ ! -f "$MERCURE_REPO/app/VERSION" ]; then
+        error "Invalid repository directory. install.sh and app/VERSION not found at $MERCURE_REPO"
+    fi
+    
+    local OLD_VERSION=$(cat "$MERCURE_BASE/docker/base/Dockerfile" | grep "LABEL version=" | cut -d'"' -f2 || echo "unknown")
+    local NEW_VERSION=$(cat "$MERCURE_REPO/app/VERSION")
+    
+    info "Current version: $OLD_VERSION"
+    info "New version: $NEW_VERSION"
+    info "Source: $MERCURE_REPO"
+    
+    cd "$MERCURE_REPO"
+    ./install.sh docker -u
     success "mercure updated successfully"
 }
 
@@ -240,6 +286,37 @@ cleanup_docker() {
     success "Docker cleanup completed"
 }
 
+show_repo_info() {
+    info "Repository and Installation Information:"
+    echo ""
+    echo "  Installation: $MERCURE_BASE"
+    if [ -f "$MERCURE_BASE/docker/base/Dockerfile" ]; then
+        local INSTALLED_VERSION=$(cat "$MERCURE_BASE/docker/base/Dockerfile" | grep "LABEL version=" | cut -d'"' -f2 || echo "unknown")
+        echo "  Installed Version: $INSTALLED_VERSION"
+    fi
+    echo ""
+    echo "  Repository: $MERCURE_REPO"
+    if [ -d "$MERCURE_REPO" ] && [ -f "$MERCURE_REPO/app/VERSION" ]; then
+        local REPO_VERSION=$(cat "$MERCURE_REPO/app/VERSION")
+        echo "  Repository Version: $REPO_VERSION"
+        
+        if [ -d "$MERCURE_REPO/.git" ]; then
+            cd "$MERCURE_REPO"
+            local BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
+            local COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+            echo "  Git Branch: $BRANCH"
+            echo "  Git Commit: $COMMIT"
+            
+            # Check for uncommitted changes
+            if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+                warning "Uncommitted changes detected in repository"
+            fi
+        fi
+    else
+        warning "Repository not found or invalid at $MERCURE_REPO"
+    fi
+}
+
 show_help() {
     echo "mercure Management Script"
     echo ""
@@ -252,15 +329,24 @@ show_help() {
     echo "  restart                   Restart all services"
     echo "  rebuild [--force]         Rebuild and restart services"
     echo "  logs [service] [-f]       Show logs (optionally follow)"
-    echo "  update                    Update mercure installation"
+    echo "  sync                      Sync changes from repo and rebuild"
+    echo "  update                    Full update from repo (runs install script)"
+    echo "  info                      Show repo and installation info"
     echo "  backup                    Create backup of data and config"
     echo "  restore <backup_dir>      Restore from backup"
     echo "  purge                     Completely remove installation"
     echo "  cleanup                   Clean up Docker system"
     echo "  help                      Show this help"
     echo ""
+    echo "Workflow:"
+    echo "  - Edit code in: $MERCURE_REPO"
+    echo "  - Run 'sync' to deploy changes to: $MERCURE_BASE"
+    echo "  - Run 'update' for full reinstall/migration"
+    echo ""
     echo "Examples:"
     echo "  $0 status"
+    echo "  $0 info"
+    echo "  $0 sync"
     echo "  $0 logs receiver -f"
     echo "  $0 rebuild --force"
     echo "  $0 restore /opt/mercure-backup-20231201-143000"
@@ -300,10 +386,18 @@ case "${1:-help}" in
         check_installation
         show_logs "${2:-}" "${3:-}"
         ;;
+    sync)
+        check_root
+        check_installation
+        sync_from_repo
+        ;;
     update)
         check_root
         check_installation
         update_mercure
+        ;;
+    info)
+        show_repo_info
         ;;
     backup)
         check_root
