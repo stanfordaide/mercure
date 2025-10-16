@@ -161,8 +161,27 @@ update_mercure() {
         error "Repository directory not found at $MERCURE_REPO"
     fi
     
-    if [ ! -f "$MERCURE_REPO/install.sh" ] || [ ! -f "$MERCURE_REPO/app/VERSION" ]; then
-        error "Invalid repository directory. install.sh and app/VERSION not found at $MERCURE_REPO"
+    if [ ! -f "$MERCURE_REPO/app/VERSION" ]; then
+        error "Invalid repository directory. app/VERSION not found at $MERCURE_REPO"
+    fi
+    
+    # Detect OS and choose appropriate install script
+    local INSTALL_SCRIPT="install.sh"
+    local INSTALL_ARGS="docker -u"
+    
+    if [ -f /etc/redhat-release ]; then
+        if [ -f "$MERCURE_REPO/install_rhel_v2.sh" ]; then
+            INSTALL_SCRIPT="install_rhel_v2.sh"
+            INSTALL_ARGS="-u"
+            info "Detected RHEL/CentOS system, using install_rhel_v2.sh"
+        elif [ -f "$MERCURE_REPO/install_rhel.sh" ]; then
+            INSTALL_SCRIPT="install_rhel.sh"
+            info "Detected RHEL/CentOS system, using install_rhel.sh"
+        fi
+    fi
+    
+    if [ ! -f "$MERCURE_REPO/$INSTALL_SCRIPT" ]; then
+        error "Install script not found: $MERCURE_REPO/$INSTALL_SCRIPT"
     fi
     
     local OLD_VERSION=$(cat "$MERCURE_BASE/docker/base/Dockerfile" | grep "LABEL version=" | cut -d'"' -f2 || echo "unknown")
@@ -171,9 +190,10 @@ update_mercure() {
     info "Current version: $OLD_VERSION"
     info "New version: $NEW_VERSION"
     info "Source: $MERCURE_REPO"
+    info "Using: $INSTALL_SCRIPT"
     
     cd "$MERCURE_REPO"
-    ./install.sh docker -u
+    ./$INSTALL_SCRIPT $INSTALL_ARGS
     success "mercure updated successfully"
 }
 

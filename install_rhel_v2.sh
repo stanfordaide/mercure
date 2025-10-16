@@ -71,11 +71,23 @@ if [ -f "$CONFIG_PATH"/db.env ]; then
   DB_PWD=$POSTGRES_PASSWORD
 fi
 
+echo "============================================"
 echo "Installation folder:  $MERCURE_BASE"
 echo "Data folder:          $DATA_PATH"
 echo "Config folder:        $CONFIG_PATH"
 echo "Database folder:      $DB_PATH"
 echo "Source folder:        $MERCURE_SRC"
+echo "============================================"
+echo ""
+echo "NOTE: This installation will copy files from the source"
+echo "      folder to the installation folder at $MERCURE_BASE"
+echo ""
+echo "WORKFLOW:"
+echo "  1. Keep your source/development files in: $MERCURE_SRC"
+echo "  2. This script installs to: $MERCURE_BASE"
+echo "  3. After installation, use mercure-manager.sh to:"
+echo "     - sync: Quick deploy changes from repo"
+echo "     - update: Full reinstall/migration"
 echo ""
 
 create_user () {
@@ -170,7 +182,9 @@ install_docker () {
 setup_docker () {
   local overwrite=${1:-false}
   if [ "$overwrite" = true ] || [ ! -f "$MERCURE_BASE"/docker-compose.yml ]; then
-    echo "## Copying docker-compose.yml..."
+    echo "## Copying docker-compose.yml from repository..."
+    echo "   Source: $MERCURE_SRC/docker/docker-compose.yml"
+    echo "   Target: $MERCURE_BASE/docker-compose.yml"
     sudo cp $MERCURE_SRC/docker/docker-compose.yml $MERCURE_BASE
     sudo sed -i -e "s/\\\${DOCKER_GID}/$(getent group docker | cut -d: -f3)/g" $MERCURE_BASE/docker-compose.yml
     sudo sed -i -e "s/\\\${UID}/$(getent passwd mercure | cut -d: -f3)/g" $MERCURE_BASE/docker-compose.yml
@@ -182,6 +196,15 @@ setup_docker () {
       sudo sed -i "s/\\\${IMAGE_TAG}/$IMAGE_TAG/g" $MERCURE_BASE/docker-compose.yml
     fi
     sudo chown $OWNER:$OWNER "$MERCURE_BASE"/docker-compose.yml
+  fi
+  
+  # Copy docker directory structure for builds
+  echo "## Syncing docker build files from repository..."
+  if [ -d "$MERCURE_SRC/docker" ]; then
+    sudo mkdir -p "$MERCURE_BASE/docker"
+    sudo cp -r "$MERCURE_SRC/docker/"* "$MERCURE_BASE/docker/"
+    sudo chown -R $OWNER:$OWNER "$MERCURE_BASE/docker"
+    echo "   Docker files synced to $MERCURE_BASE/docker/"
   fi
 }
 
@@ -237,19 +260,49 @@ docker_update () {
     echo "ERROR: $MERCURE_BASE/docker-compose.override.yml exists. Updating a dev install is not supported."
     exit 1  
   fi
+  
+  # Show version information
+  local OLD_VERSION="unknown"
+  if [ -f "$MERCURE_BASE/docker/base/Dockerfile" ]; then
+    OLD_VERSION=$(grep "LABEL version=" "$MERCURE_BASE/docker/base/Dockerfile" | cut -d'"' -f2 || echo "unknown")
+  fi
+  
+  echo ""
+  echo "============================================"
+  echo "Updating mercure installation"
+  echo "============================================"
+  echo "Current version:    $OLD_VERSION"
+  echo "New version:        $VERSION"
+  echo "Installation path:  $MERCURE_BASE"
+  echo "Repository path:    $MERCURE_SRC"
+  echo "============================================"
+  echo ""
+  
   if [ $FORCE_INSTALL != "y" ]; then
-    echo "Update mercure to ${MERCURE_TAG:-VERSION} (y/n)?"
+    echo "Update mercure to ${MERCURE_TAG:-$VERSION} (y/n)?"
     read -p "WARNING: Server may require manual fixes after update. Taking backups beforehand is recommended. " ANS
     if [ "$ANS" != "y" ]; then
       echo "Update aborted."
       exit 0
     fi
   fi
+  
+  echo "Stopping services..."
   pushd $MERCURE_BASE
   sudo docker compose down || true
   popd
+  
+  echo "Syncing files from repository..."
   setup_docker true
+  install_management_script
+  
+  echo "Starting services..."
   start_docker
+  
+  echo ""
+  echo "============================================"
+  echo "Update complete!"
+  echo "============================================"
 }
 
 # Initialize default values
@@ -323,7 +376,32 @@ fi
 
 docker_install
 
-echo "Installation complete"
+echo ""
+echo "============================================"
+echo "Installation complete!"
+echo "============================================"
+echo ""
+echo "What's next?"
+echo ""
+echo "1. Start/stop services:"
+echo "   sudo $MERCURE_BASE/mercure-manager.sh start|stop|restart"
+echo ""
+echo "2. View logs:"
+echo "   sudo $MERCURE_BASE/mercure-manager.sh logs [service] [-f]"
+echo ""
+echo "3. Check status:"
+echo "   sudo $MERCURE_BASE/mercure-manager.sh status"
+echo ""
+echo "4. Get repository info:"
+echo "   sudo $MERCURE_BASE/mercure-manager.sh info"
+echo ""
+echo "5. Deploy changes from $MERCURE_SRC:"
+echo "   sudo $MERCURE_BASE/mercure-manager.sh sync"
+echo ""
+echo "For full help:"
+echo "   sudo $MERCURE_BASE/mercure-manager.sh help"
+echo ""
+echo "============================================"
 
 if [ $INSTALL_METABASE == true ]; then
   sudo dnf install -y jq
